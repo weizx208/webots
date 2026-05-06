@@ -10,22 +10,23 @@ You can download an OpenStreetMap map of any part of the world from [www.openstr
 
 ## Dependencies
 
-Follow [these instructions](../guide/using-python.md) to install Python.
+Follow [these instructions](../guide/using-python.md) to install Python 3.
 
 Then install the Python `lxml`, `pyproj`, `shapely` and `webcolors` modules, as described below.
 
 ### Linux
 
 ```sh
-sudo apt-get install python-pip
-pip install --upgrade pip
-pip install lxml pyproj shapely webcolors configparser --user
+sudo apt-get install python3-pip
+python3 -m pip install --upgrade pip
+python3 -m pip install lxml pyproj shapely webcolors configparser --user
 ```
 
 ### macOS
 
 ```
-pip install lxml pyproj shapely webcolors configparser --user
+python3 -m pip install --upgrade pip
+python3 -m pip install lxml pyproj shapely webcolors configparser --user
 ```
 
 ### Windows
@@ -45,14 +46,34 @@ Type in the [Windows Command Prompt](https://en.wikipedia.org/wiki/Cmd.exe) open
 %PYTHON_PATH%\Scripts\pip.exe install %HOME%\Downloads\Shapely‑<<version>>‑cp<<python_version>>‑cp<<python_version>>m‑win_amd64.whl
 ```
 
-## How to Use the Importer
+## How to use the Importer
 
 You should use the `importer.py` Python script to generate the `myMap.wbt` webots simulation world from the `myMap.osm` file:
 
+%tab-component "os"
+
+%tab "Windows"
 ```sh
 cd $WEBOTS_HOME/resources/osm_importer
-python importer.py --input=myMap.osm --output=myMap.wbt
+python3 importer.py --input=myMap.osm --output=myMap.wbt
 ```
+%tab-end
+
+%tab "Linux"
+```sh
+cd $WEBOTS_HOME/resources/osm_importer
+python3 importer.py --input=myMap.osm --output=myMap.wbt
+```
+%tab-end
+
+%tab "macOS"
+```sh
+cd $WEBOTS_HOME/Contents/Resources/osm_importer
+python3 importer.py --input=myMap.osm --output=myMap.wbt
+```
+%tab-end
+
+%end
 
 Some extra folders such as `forest` can be generated in the target directory depending on the importer arguments.
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,9 +34,10 @@ void base_turn_left();
 void base_turn_right();
 void base_strafe_left();
 void base_strafe_right();
-void base_set_wheel_velocity(WbDeviceTag t, double velocity);
+void base_apply_speeds(double vx, double vy, double omega);
+void base_accelerate();
 void base_set_speeds(double vx, double vy, double omega);
-void base_braitenberg_avoidance();
+void base_braitenberg_avoidance(const double *sensors_values);
 
 #ifdef __cplusplus
 }

@@ -2,10 +2,10 @@
 
 ```
 JointParameters {
-  SFFloat position        0       # [0, inf)
+  SFFloat position        0       # (-inf, inf)
   SFVec3f axis            0 0 1   # unit axis
-  SFFloat minStop         0       # [-pi, pi]
-  SFFloat maxStop         0       # [-pi, pi]
+  SFFloat minStop         0       # (-inf, inf)
+  SFFloat maxStop         0       # (-inf, inf)
   SFFloat springConstant  0       # [0, inf)
   SFFloat dampingConstant 0       # [0, inf)
   SFFloat staticFriction  0       # [0, inf)
@@ -30,7 +30,7 @@ When changing the `position` field from the Webots scene tree, Webots also chang
 Similarly, when changing the `position` field of a [JointParameters](#jointparameters) node in a text editor, you should take care of also changing the corresponding `rotation` or `translation` field accordingly.
 
 - The `minStop` and `maxStop` fields specify the position of physical (or mechanical) stops.
-These fields are described in more detail in the "Joint Limits" section, see below.
+These fields are described in more detail in the [Joint Limits section](#joint-limits), see below.
 
 - The `springConstant` and `dampingConstant` fields allow the addition of spring and/or damping behavior to the joint.
 These fields are described in more detail in the "Springs and Dampers" section, see below.
@@ -82,7 +82,7 @@ When used for a rotational motion the value of `minStop` must be in the range [-
 When both `minStop` and `maxStop` are zero (the default), the hard limits are deactivated.
 The joint hard limits use ODE joint stops (for more information see the ODE documentation on `dParamLoStop` and `dParamHiStop`).
 
-Finally, note that when both soft (`minPosition` and `maxPosition`, see the [Motor](motor.md)'s "Motor Limits" section) and hard limits (`minStop` and `maxStop`) are activated, the range of the soft limits must be included in the range of the hard limits, such that `minStop <= minValue` and `maxStop>= maxValue`.
+Finally, note that when both soft (`minPosition` and `maxPosition`, see the [Motor](motor.md)'s "Motor Limits" section) and hard limits (`minStop` and `maxStop`) are activated, the range of the soft limits must be included in the range of the hard limits, such that `minStop <= minPosition` and `maxStop >= maxPosition`.
 
 ### Springs and Dampers
 
@@ -90,17 +90,19 @@ The `springConstant` field specifies the value of the spring constant (or spring
 The `springConstant` must be positive or zero.
 If the `springConstant` is zero (the default), no spring torque/force will be applied to the joint.
 If the `springConstant` is greater than zero, then a spring force will be computed and applied to the joint in addition to the other forces (i.e., motor force, damping force).
-The spring force is calculated according to Hooke's law: *F = -Kx*, where *K* is the `springConstant` and *x* is the current joint position as represented by the `position` field.
+In case of a linear joint it is expressed in *N/m* and the spring force is calculated according to Hooke's law: *F = -Kx*, where *K* is the `springConstant` and *x* is the current joint position as represented by the `position` field.
 Therefore, the spring force is computed so as to be proportional to the current joint position, and to move the joint back to its initial position.
+Similarly, in case of a rotational joint, the spring constant is expressed in *N.m/rad* and the resulting torque *T* is computed in from this formula: *T = -Kx*.
 When designing a robot model that uses springs, it is important to remember that the spring's resting position for each joint will correspond to the initial position of the joint.
-The only expection arise when the closest upper [Solid](solid.md) of the [Joint](joint.md) is passive, i.e. the `physics` field is not defined.
+The only exception arises when the closest upper [Solid](solid.md) of the [Joint](joint.md) is passive, i.e. the `physics` field is not defined.
 In this case the spring force direction is inverted.
 
 The `dampingConstant` field specifies the value of the joint damping constant.
 The value of `dampingConstant` must be positive or zero.
 If `dampingConstant` is zero (the default), no damping torque/force will be added to the joint.
 If `dampingConstant` is greater than zero, a damping torque/force will be applied to the joint in addition to the other forces (i.e., motor force, spring force).
-This damping torque/force is proportional to the effective joint velocity: *F = -Bv*, where *B* is the damping constant, and *v = dx/dt* is the effective joint velocity computed by the physics simulator.
+This damping torque/force *F* is proportional to the effective joint velocity: *F = -Bv*, where *B* is the damping constant, and *v = dx/dt* is the effective joint velocity computed by the physics simulator.
+The unit of the damping constant for a rotational joint is expressed in *N.m.s/rad* whereas the unit of the damping constant for a linear joint is expressed in *N.s/m*.
 
 %figure "Mechanical Diagram of a Slider Joint"
 

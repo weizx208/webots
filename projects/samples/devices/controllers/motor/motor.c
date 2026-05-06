@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,7 @@
  */
 
 /*
- * Description: simple example of motor position control
+ * Description: Simple example of motor position control.
  */
 
 #include <math.h>
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   int counter = 0;
   while (wb_robot_step(time_step) != -1) {
     wb_motor_set_position(motor, target);
-    if (counter++ == 100) {
+    if (counter++ == 50) {
       target += M_PI_4;
       counter = 0;
     }

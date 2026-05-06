@@ -14,9 +14,11 @@ Display {
 The [Display](#display) node allows to handle a 2D pixel array using simple API functions, and render it into a 2D overlay on the 3D view, into a 2D texture of any [Shape](shape.md) node, or both.
 It can model an embedded screen or it can display any graphical information such as graphs, text, robot trajectory, filtered camera images and so on.
 
-If the first child of the [Display](#display) node is or contains (recursive search if the first node is a [Group](group.md)) a [Shape](shape.md) node having a [ImageTexture](imagetexture.md), then the internal texture of the(se) [ImageTexture](imagetexture.md) node(s) is replaced by the texture of the [Display](#display).
-In this case, the `Shape.appearance` field should contain an [Appearance](appearance.md) node (rather than a [PBRAppearance](pbrappearance.md) node).
-It is necessary to set the `filtering` field of the(se) [ImageTexture](imagetexture.md) node(s) to 0 in order to prevent issues when distancing oneself from the display.
+To model an embedded screen, the first child of the [Display](#display) node should be or contain (recursive search if the first node is a [Group](group.md)) a [Shape](shape.md) node having an appearance and an [ImageTexture](imagetexture.md) node, then the internal texture of the [ImageTexture](imagetexture.md) node is replaced by the texture of the [Display](#display).
+Both [Appearance](appearance.md) and [PBRAppearance](pbrappearance.md) nodes are supported.
+In case of [PBRAppearance](pbrappearance.md) node, at least `PBRAppearance.baseColorMap` or `PBRAppearance.emissiveColorMap` [ImageTexture](imagetexture.md) node should be defined. If both are defined, then both textures will be internally replaced by the [Display](#display) texture.
+Using the [Appearance](appearance.md) node and setting the [Material](material.md).emissiveColor field to `1 1 1` helps preserving the original colors of the loaded [Display](#display) texture.
+Additionally, it is necessary to set the `filtering` field of the [ImageTexture](imagetexture.md) nodes to 0 in order to prevent issues when distancing oneself from the display.
 
 ### Field Summary
 
@@ -53,6 +55,7 @@ For example, in order to draw two red lines, the `wb_display_set_color` contextu
 The display image is shown by default on top of the 3D window with a cyan border, see [this figure](#display-overlay-image).
 The user can move this display image at the desired position using the mouse drag and drop and resize it by clicking on the icon at the bottom right corner.
 Additionally a close button is available on the top right corner to hide the image.
+If the mouse cursor is over the overlay image and the simulation is paused, the RGBA value of the selected pixel is displayed in the status bar at the bottom of the Webots window.
 Once the robot is selected, it is also possible to show or hide the overlay image from the `Display Devices` item in `Robot` menu.
 
 It is also possible to show the display image in an external window by double-clicking on it.
@@ -126,14 +129,6 @@ public class Display extends Device {
 width = wb_display_get_width(tag)
 height = wb_display_get_height(tag)
 ```
-
-%tab-end
-
-%tab "ROS"
-
-| name | service/topic | data type | data type definition |
-| --- | --- | --- | --- |
-| `/<device_name>/get_info` | `service` | `webots_ros::display_get_info` | `uint8 ask`<br/>`---`<br/>`uint32 width`<br/>`uint32 height` |
 
 %tab-end
 
@@ -227,17 +222,6 @@ wb_display_set_font(tag, font, size, anti_aliasing)
 
 %tab-end
 
-%tab "ROS"
-
-| name | service/topic | data type | data type definition |
-| --- | --- | --- | --- |
-| `/<device_name>/set_color` | `service` | [`webots_ros::set_int`](ros-api.md#common-services) | |
-| `/<device_name>/set_alpha` | `service` | [`webots_ros::set_float`](ros-api.md#common-services) | |
-| `/<device_name>/set_opacity` | `service` | [`webots_ros::set_float`](ros-api.md#common-services) | |
-| `/<device_name>/set_font` | `service` | `webots_ros::display_set_font` | `string font`<br/>`int32 size`<br/>`uint8 antiAliasing`<br/>`---`<br/>`int8 success` |
-
-%tab-end
-
 %end
 
 ###### Description
@@ -260,9 +244,9 @@ Before the first call to the `wb_display_set_alpha` function, the default value 
 
 The `wb_display_set_opacity` function defines with which opacity the new pixels will replace the old ones for the following drawing instructions.
 It is expressed as a floating point value between 0.0 and 1.0; while 0 means that the new pixel has no effect over the old one and 1 means that the new pixel replaces entirely the old one.
-Only the color channel is affected by the `opacity` according to the [blending](#blending-formula-used-to-compute-the-new-the-color-channels-of-a-pixel-from-the-old-color-channels-of-the-background-pixel-and-from-the-opacity) formula.
+Only the color channel is affected by the `opacity` according to the [blending](#blending-formula-used-to-compute-the-new-color-channels-cn-of-a-pixel-from-the-old-color-channels-co-of-the-background-pixel-and-from-the-opacity) formula.
 
-%figure "Blending formula used to compute the new the color channels (Cn) of a pixel from the old color channels (Co) of the background pixel and from the opacity."
+%figure "Blending formula used to compute the new color channels (Cn) of a pixel from the old color channels (Co) of the background pixel and from the opacity."
 
 ![display_opacity.png](images/display_opacity.png)
 
@@ -359,15 +343,6 @@ public class Display extends Device {
 wb_display_attach_camera(tag, camera_tag)
 wb_display_detach_camera(tag)
 ```
-
-%tab-end
-
-%tab "ROS"
-
-| name | service/topic | data type | data type definition |
-| --- | --- | --- | --- |
-| `/<device_name>/attach_camera` | `service` | [`webots_ros::set_string`](ros-api.md#common-services) | |
-| `/<device_name>/detach_camera` | `service` | [`webots_ros::get_bool`](ros-api.md#common-services) | |
 
 %tab-end
 
@@ -495,22 +470,6 @@ wb_display_fill_polygon(tag, [x1 x2 ... xn], [y1 y2 ... yn])
 
 %tab-end
 
-%tab "ROS"
-
-| name | service/topic | data type | data type definition |
-| --- | --- | --- | --- |
-| `/<device_name>/draw_pixel` | `service` | `webots_ros::display_draw_pixel` | `int32 x`<br/>`int32 y`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/draw_line` | `service` | `webots_ros::display_draw_line` | `int32 x1`<br/>`int32 y1`<br/>`int32 x2`<br/>`int32 y2`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/draw_rectangle` | `service` | `webots_ros::display_draw_rectangle` | `int32 x`<br/>`int32 y`<br/>`int32 width`<br/>`int32 height`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/draw_oval` | `service` | `webots_ros::display_draw_oval` | `int32 cx`<br/>`int32 cy`<br/>`int32 a`<br/>`int32 b`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/draw_polygon` | `service` | `webots_ros::display_draw_polygon` | `int32[] x`<br/>`int32[] y`<br/>`int32 size`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/draw_text` | `service` | `webots_ros::display_draw_text` | `string text`<br/>`int32 x`<br/>`int32 y`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/fill_rectangle` | `service` | `webots_ros::display_draw_rectangle` | `int32 x`<br/>`int32 y`<br/>`int32 width`<br/>`int32 height`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/fill_oval` | `service` | `webots_ros::display_draw_oval` | `int32 cx`<br/>`int32 cy`<br/>`int32 a`<br/>`int32 b`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/fill_polygon` | `service` | `webots_ros::display_draw_polygon` | `int32[] x`<br/>`int32[] y`<br/>`int32 size`<br/>`---`<br/>`int8 success` |
-
-%tab-end
-
 %end
 
 ##### Description
@@ -618,10 +577,7 @@ namespace webots {
 %tab "Python"
 
 ```python
-from controller import Display, ImageRef
-
-class ImageRef:
-    # ...
+from controller import Display
 
 class Display (Device):
     RGB, RGBA, ARGB, BGRA, ABGR
@@ -677,19 +633,6 @@ wb_display_image_delete(tag, image)
 
 %tab-end
 
-%tab "ROS"
-
-| name | service/topic | data type | data type definition |
-| --- | --- | --- | --- |
-| `/<device_name>/image_new` | `service` | `webots_ros::display_image_new` | `int32 width`<br/>`int32 height`<br/>`char[] data`<br/>`int32 format`<br/>`---`<br/>`uint64 ir` |
-| `/<device_name>/image_load` | `service` | `webots_ros::display_image_load` | `string filename`<br/>`---`<br/>`uint64 ir` |
-| `/<device_name>/image_copy` | `service` | `webots_ros::display_image_copy` | `int32 x`<br/>`int32 y`<br/>`int32 width`<br/>`int32 height`<br/>`---`<br/>`uint64 ir` |
-| `/<device_name>/image_paste` | `service` | `webots_ros::display_image_paste` | `uint64 ir`<br/>`int32 x`<br/>`int32 y`<br/>`uint8 blend`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/image_save` | `service` | `webots_ros::display_image_save` | `string filename`<br/>`uint64 ir`<br/>`---`<br/>`int8 success` |
-| `/<device_name>/image_delete` | `service` | `webots_ros::display_image_delete` | `uint64 ir`<br/>`---`<br/>`int8 success` |
-
-%tab-end
-
 %end
 
 ##### Description
@@ -717,7 +660,7 @@ The copied sub-image is defined by its top left coordinate (`x`,`y`) and its dim
 
 The `wb_display_image_paste` function pastes a clipboard image referred to by the `ir` parameter to the main display image.
 The (`x`,`y`) coordinates define the top left point of the pasted image.
-If the `blend` parameter is true, the resulting pixels displayed in the main display image are computed using a blending operation (similar to the one defined in the [blending](#blending-formula-used-to-compute-the-new-the-color-channels-of-a-pixel-from-the-old-color-channels-of-the-background-pixel-and-from-the-opacity) formula but involving the alpha channels of the old and new pixels instead of the opacity).
+If the `blend` parameter is true, the resulting pixels displayed in the main display image are computed using a blending operation (similar to the one defined in the [blending](#blending-formula-used-to-compute-the-new-color-channels-cn-of-a-pixel-from-the-old-color-channels-co-of-the-background-pixel-and-from-the-opacity) formula but involving the alpha channels of the old and new pixels instead of the opacity).
 In the `blend` parameter is set to false, the resulting pixels are simply copied from the clipboard image.
 The paste operation is much faster if `blend` is set to false.
 
@@ -731,4 +674,149 @@ The `wb_display_image_delete` function releases the memory used by a clipboard i
 After this call the value of `ir` becomes invalid and should not be used any more.
 Using this function is recommended after a clipboard image is not needed any more.
 
-> **Note** [Java]: The `Display.imageNew` function can display the image returned by the `Camera.getImage` function directly if the pixel format argument is set to ARGB.
+The following controller snippet shows how to copy a [Camera](camera.md) image to the main display image.
+This is particularly useful if you need to modify the [Camera](camera.md) image before copying it to the main display image, otherwise you should use the [`wb_display_attach_camera`](#wb_display_attach_camera) function that provides a better performance.
+
+%tab-component "language"
+%tab "C"
+```c
+#include <webots/robot.h>
+#include <webots/camera.h>
+#include <webots/display.h>
+
+int main() {
+  wb_robot_init();
+
+  const int time_step = wb_robot_get_basic_time_step();
+  WbDeviceTag camera = wb_robot_get_device("camera");
+  wb_camera_enable(camera, time_step);
+  const int width = wb_camera_get_width(camera);
+  const int height = wb_camera_get_height(camera);
+  WbDeviceTag display = wb_robot_get_device("display");
+
+  while(wb_robot_step(time_step) != -1) {
+    const unsigned char *data = wb_camera_get_image(camera);
+    if (data) {
+      WbImageRef ir = wb_display_image_new(display, width, height, data, WB_IMAGE_BGRA);
+      wb_display_image_paste(display, ir, 0, 0, false);
+      wb_display_image_delete(display, ir);
+    }
+  }
+
+  wb_robot_cleanup();
+  return 0;
+}
+```
+%tab-end
+
+%tab "C++"
+```cpp
+#include <webots/Robot.hpp>
+#include <webots/Camera.hpp>
+#include <webots/Display.hpp>
+
+using namespace webots;
+
+int main() {
+  Robot *robot = new Robot();
+  const int timeStep = robot->getBasicTimeStep();
+
+  Camera *camera = robot->getCamera("camera");
+  camera->enable(timeStep);
+  const int width = camera->getWidth();
+  const int height = camera->getHeight();
+  Display *display = robot->getDisplay("display");
+
+  while (robot->step(timeStep) != -1) {
+    const unsigned char *data = camera->getImage();
+    if (data) {
+      ImageRef *ir = display->imageNew(width, height, data, Display::BGRA);
+      display->imagePaste(ir, 0, 0, false);
+      display->imageDelete(ir);
+    }
+  }
+
+  delete robot;
+  return 0;
+}
+```
+%tab-end
+
+%tab "Python"
+```python
+from controller import Robot, Camera, Display
+
+robot = Robot()
+timestep = int(robot.getBasicTimeStep())
+
+camera = robot.getCamera('camera')
+camera.enable(timestep)
+width = camera.getWidth()
+height = camera.getHeight()
+display = robot.getDisplay('display');
+
+while robot.step(32) != -1:
+    data = camera.getImage()
+    if data:
+        ir = display.imageNew(data, Display.BGRA, width, height)
+        display.imagePaste(ir, 0, 0, False)
+        display.imageDelete(ir)
+```
+%tab-end
+
+%tab "Java"
+```java
+import com.cyberbotics.webots.controller.Robot;
+import com.cyberbotics.webots.controller.Camera;
+import com.cyberbotics.webots.controller.Display;
+import com.cyberbotics.webots.controller.ImageRef;
+
+public class ShowCameraInDisplay {
+
+  public static void main(String[] args) {
+
+    final Robot robot = new Robot();
+    int timeStep = (int) Math.round(robot.getBasicTimeStep());
+
+    Camera camera = robot.getCamera("camera");
+    camera.enable(timeStep);
+    int width = camera.getWidth();
+    int height = camera.getHeight();
+    Display display = robot.getDisplay("display");
+
+    while (robot.step(32) != -1) {
+      int[] data = camera.getImage();
+      if (data != null) {
+        ImageRef ir = display.imageNew(width, height, data, Display.ARGB);
+        display.imagePaste(ir, 0, 0, false);
+        display.imageDelete(ir);
+      }
+    }
+  }
+}
+```
+%tab-end
+
+%tab "MATLAB"
+```MATLAB
+time_step = wb_robot_get_basic_time_step();
+camera = wb_robot_get_device("camera");
+wb_camera_enable(camera, time_step);
+width = wb_camera_get_width(camera);
+height = wb_camera_get_height(camera);
+display = wb_robot_get_device("display");
+
+while wb_robot_step(time_step) ~= -1
+  data = wb_camera_get_image(camera);
+  if data
+    ir = wb_display_image_new(display, width, height, data, BGRA);
+    wb_display_image_paste(display, ir, 0, 0, false);
+    wb_display_image_delete(display, ir);
+  end
+end
+```
+%tab-end
+%end
+
+ **Note**: The Java `Display.imageNew` function can display the image returned by the `Camera.getImage` function directly if the pixel format argument is set to ARGB.
+In the other programming languages the pixel format should be set to BGRA.

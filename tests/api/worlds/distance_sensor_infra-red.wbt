@@ -1,5 +1,10 @@
-#VRML_SIM R2020b utf8
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "webots://tests/default/protos/TestSuiteEmitter.proto"
+EXTERNPROTO "webots://tests/default/protos/TestSuiteSupervisor.proto"
+
 WorldInfo {
+  coordinateSystem "NUE"
 }
 Viewpoint {
   orientation -0.08443836184132184 -0.98781059532215 -0.13076846263091862 2.1095059429457708
@@ -14,8 +19,9 @@ DEF BOARD Solid {
   translation 0 0.005 0
   rotation 1 0 0 0
   children [
-    DEF BOARD_GREEN_TRANSFORM Transform {
+    DEF BOARD_GREEN_POSE Pose {
       translation 0 0 -0.075
+      rotation 1 0 0 -1.57079632679
       children [
         DEF BOARD_GREEN Shape {
           appearance DEF BOARD_GREEN_APPEARANCE Appearance {
@@ -35,8 +41,9 @@ DEF BOARD Solid {
         }
       ]
     }
-    DEF BOARD_WHITE_TRANSFORM Transform {
+    DEF BOARD_WHITE_POSE Pose {
       translation 0 0 0.075
+      rotation 1 0 0 -1.57079632679
       children [
         DEF BOARD_WHITE Shape {
           appearance PBRAppearance {
@@ -53,14 +60,16 @@ DEF BOARD Solid {
   ]
   boundingObject Group {
     children [
-      Transform {
+      Pose {
         translation 0 0 -0.075
+        rotation 1 0 0 -1.57079632679
         children [
           USE BOARD_GREEN
         ]
       }
-      Transform {
+      Pose {
         translation 0 0 0.075
+        rotation 1 0 0 -1.57079632679
         children [
           USE BOARD_WHITE
         ]
@@ -99,7 +108,7 @@ DEF ROBOT Robot {
     }
     DEF PEN0 Pen {
       translation 0 -0.02 0.08
-      rotation 0 0 1 0
+      rotation 1 0 0 -1.57
       name "pen0"
       inkColor 0 1 0
       inkDensity 0.298039
@@ -108,7 +117,7 @@ DEF ROBOT Robot {
     }
     DEF PEN1 Pen {
       translation 0 -0.02 -0.08
-      rotation 0 0 1 0
+      rotation 1 0 0 -1.57
       name "pen1"
       inkColor 0 1 0
       inkDensity 0.298039

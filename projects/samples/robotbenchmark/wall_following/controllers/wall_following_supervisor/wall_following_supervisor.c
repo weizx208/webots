@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+#include <webots/plugins/robot_window/default.h>
 #include <webots/robot.h>
 #include <webots/supervisor.h>
-#include <webots/utils/default_robot_window.h>
 
 #include "../../../include/robotbenchmark.h"
 #include "wall_following_metric.h"
@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #define BENCHMARK_DURATION 60
-//#define ALLOW_LABELS true // uncomment to enable labels
+// #define ALLOW_LABELS true // uncomment to enable labels
 
 static WallFollowingMetric *generate_metric_from_proto(const double *robot_starting_position) {
   WallFollowingMetric *metric = NULL;
@@ -130,9 +130,8 @@ int main(int argc, char **argv) {
     int waiting_answer = 1;
 
     do {
-      const char *answer_message = wb_robot_wwi_receive_text();
-
-      if (answer_message) {
+      const char *answer_message;
+      while ((answer_message = wb_robot_wwi_receive_text())) {
         if (strncmp(answer_message, "record:", 7) == 0) {
           robotbenchmark_record(answer_message, "wall_following", metric->performance);
           waiting_answer = 0;

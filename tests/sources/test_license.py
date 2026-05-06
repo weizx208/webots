@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-# Copyright 1996-2020 Cyberbotics Ltd.
+# Copyright 1996-2024 Cyberbotics Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,11 +17,19 @@
 """Test that checks that all the source files have the Apache 2 license."""
 
 import unittest
-import datetime
 import os
 import fnmatch
 
 from io import open
+
+WEBOTS_HOME = os.path.normpath(os.environ['WEBOTS_HOME'])
+
+with open(os.path.join(WEBOTS_HOME, 'resources', 'version.txt'), 'r') as file:
+    version = file.readlines()[0].strip()
+
+year = int(version[1:5])
+if version[-1] == 'a':
+    year -= 1
 
 APACHE2_LICENSE_C = """/*
  * Copyright 1996-20XX Cyberbotics Ltd.
@@ -30,14 +38,14 @@ APACHE2_LICENSE_C = """/*
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */""".replace('20XX', str(datetime.datetime.now().year))
+ */""".replace('20XX', str(year))
 
 APACHE2_LICENSE_CPP = """// Copyright 1996-20XX Cyberbotics Ltd.
 //
@@ -45,13 +53,13 @@ APACHE2_LICENSE_CPP = """// Copyright 1996-20XX Cyberbotics Ltd.
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.""".replace('20XX', str(datetime.datetime.now().year))
+// limitations under the License.""".replace('20XX', str(year))
 
 APACHE2_LICENSE_PYTHON = """# Copyright 1996-20XX Cyberbotics Ltd.
 #
@@ -59,13 +67,13 @@ APACHE2_LICENSE_PYTHON = """# Copyright 1996-20XX Cyberbotics Ltd.
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.""".replace('20XX', str(datetime.datetime.now().year))
+# limitations under the License.""".replace('20XX', str(year))
 
 PYTHON_OPTIONAL_HEADERS = [
     '#!/usr/bin/env python2',
@@ -80,25 +88,23 @@ class TestLicense(unittest.TestCase):
     def setUp(self):
         """Get all the source files which require a license check."""
         directories = [
-            'src/lib/Controller',
+            'src/controller/c',
+            'src/controller/cpp',
+            'src/controller/launcher',
             'src/webots',
             'src/wren',
             'projects',
             'include/controller',
             'include/plugins',
-            'resources/languages/cpp',
             'scripts'
         ]
 
         skippedDirectoryPaths = [
             'src/webots/external',
-            'projects/default/controllers/ros/include',
-            'projects/default/resources/sumo',
             'projects/default/libraries/vehicle/java',
             'projects/default/libraries/vehicle/python',
             'projects/humans/c3d/controllers/c3d_viewer',
-            'projects/languages/ros/controllers/ros_python/kinetic',
-            'projects/languages/ros/controllers/ros_python/python',
+            'projects/robots/bitcraze/crazyflie/controllers/crazyflie',
             'projects/robots/epfl/lis/controllers/blimp',
             'projects/robots/epfl/lis/plugins/physics/blimp_physics',
             'projects/robots/gctronic/e-puck/transfer/library',
@@ -110,14 +116,18 @@ class TestLicense(unittest.TestCase):
             'projects/robots/robotis/darwin-op/libraries/robotis-op2/robotis/Linux',
             'projects/robots/robotis/darwin-op/remote_control/libjpeg-turbo',
             'projects/robots/robotis/darwin-op/libraries',
-            'projects/samples/robotbenchmark',
-            'projects/vehicles/controllers/ros_automobile/include'
+            'projects/samples/robotbenchmark'
         ]
+        skippedDirectoryPathsFull = [os.path.join(WEBOTS_HOME, os.path.normpath(path))
+                                     for path in skippedDirectoryPaths]
 
         skippedFilePaths = [
             'projects/robots/robotis/darwin-op/plugins/remote_controls/robotis-op2_tcpip/stb_image.h',
             'projects/robots/gctronic/e-puck/controllers/e-puck2_server/play_melody.c',
-            'projects/robots/gctronic/e-puck/controllers/e-puck2_server/play_melody.h'
+            'projects/robots/gctronic/e-puck/controllers/e-puck2_server/play_melody.h',
+            'scripts/packaging/iscc_formatter.c',
+            'src/controller/c/sha1.c',
+            'src/controller/c/sha1.h'
         ]
 
         skippedDirectories = [
@@ -128,14 +138,14 @@ class TestLicense(unittest.TestCase):
 
         self.sources = []
         for directory in directories:
-            for rootPath, dirNames, fileNames in os.walk(os.environ['WEBOTS_HOME'] + os.sep + directory.replace('/', os.sep)):
+            for rootPath, dirNames, fileNames in os.walk(os.path.join(WEBOTS_HOME, os.path.normpath(directory))):
                 shouldContinue = False
-                relativeRootPath = rootPath.replace(os.environ['WEBOTS_HOME'] + os.sep, '')
-                for path in skippedDirectoryPaths:
-                    if rootPath.startswith(os.environ['WEBOTS_HOME'] + os.sep + path.replace('/', os.sep)):
+                relativeRootPath = rootPath.replace(WEBOTS_HOME + os.sep, '')
+                for skippedPath in skippedDirectoryPathsFull:
+                    if rootPath.startswith(skippedPath):
                         shouldContinue = True
                         break
-                currentDirectories = rootPath.replace(os.environ['WEBOTS_HOME'], '').split(os.sep)
+                currentDirectories = rootPath.replace(WEBOTS_HOME + os.sep, '').split(os.sep)
                 for directory in skippedDirectories:
                     if directory in currentDirectories:
                         shouldContinue = True

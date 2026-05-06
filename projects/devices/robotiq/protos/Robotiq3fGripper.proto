@@ -1,12 +1,13 @@
-#VRML_SIM R2020b utf8
+#VRML_SIM R2025a utf8
 # license: Apache License 2.0
-# license url: http://www.apache.org/licenses/LICENSE-2.0
-# documentation url: https://www.cyberbotics.com/doc/guide/universal_robots
+# license url: https://www.apache.org/licenses/LICENSE-2.0
+# documentation url: https://webots.cloud/run?url=https://github.com/cyberbotics/webots/blob/released/projects/devices/robotiq/protos/Robotiq3fGripper.proto
+# keywords: actuator/gripper
 # A 3-finger adaptive robot gripper from ROBOTIQ.
 
 PROTO Robotiq3fGripper [
-  field   SFVec3f    translation    0 0 0
-  field   SFRotation rotation       0 1 0 0
+  field   SFVec3f    translation    0 0.04 0
+  field   SFRotation rotation       0 0 1 0
   field   SFString   name           "ROBOTIQ 3f Gripper"
 ]
 {
@@ -55,10 +56,10 @@ PROTO Robotiq3fGripper [
         device [
           RotationalMotor {
             name "palm_finger_1_joint"
-            maxVelocity 100
-            minPosition -0.16
-            maxPosition 0.25
-            maxTorque 100
+            maxVelocity 100.0
+            minPosition -0.1784
+            maxPosition 0.192
+            maxTorque 100.0
           }
           PositionSensor {
             name "palm_finger_1_joint_sensor"
@@ -70,15 +71,17 @@ PROTO Robotiq3fGripper [
           children [
             HingeJoint {
               jointParameters HingeJointParameters {
+                position 0.0495
                 axis 0 0 1
                 anchor 0.02 0 0
               }
               device [
                 RotationalMotor {
                   name "finger_1_joint_1"
-                  maxVelocity 100
-                  maxPosition 3.1416
-                  maxTorque 100
+                  maxVelocity 100.0
+                  minPosition 0.0495
+                  maxPosition 1.2218
+                  maxTorque 100.0
                 }
                 PositionSensor {
                   name "finger_1_joint_1_sensor"
@@ -95,9 +98,9 @@ PROTO Robotiq3fGripper [
                     device [
                       RotationalMotor {
                         name "finger_1_joint_2"
-                        maxVelocity 100
-                        maxPosition 3.1416
-                        maxTorque 100
+                        maxVelocity 100.0
+                        maxPosition 1.5708
+                        maxTorque 100.0
                       }
                       PositionSensor {
                         name "finger_1_joint_2_sensor"
@@ -109,15 +112,17 @@ PROTO Robotiq3fGripper [
                       children [
                         HingeJoint {
                           jointParameters HingeJointParameters {
+                            position -0.0523
                             axis 0 0 1
                             anchor 0.039 0 0
                           }
                           device [
                             RotationalMotor {
                               name "finger_1_joint_3"
-                              maxVelocity 100
-                              maxPosition 3.1416
-                              maxTorque 100
+                              maxVelocity 100.0
+                              minPosition -1.2217
+                              maxPosition -0.0523
+                              maxTorque 100.0
                             }
                             PositionSensor {
                               name "finger_1_joint_3_sensor"
@@ -126,7 +131,7 @@ PROTO Robotiq3fGripper [
                           endPoint Solid {
                             translation 0.039 0 0
                             children [
-                              DEF SHAPE3 Transform {
+                              DEF SHAPE3 Pose {
                                 rotation 0 0 1 0.52
                                 children [
                                   Shape {
@@ -150,7 +155,7 @@ PROTO Robotiq3fGripper [
                               }
                             ]
                             name "finger_1_link_3"
-                            boundingObject Transform {
+                            boundingObject Pose {
                               translation 0.0180036 0.00913251 0
                               rotation 0 0 1 0.5202587712816532
                               children [
@@ -168,7 +173,7 @@ PROTO Robotiq3fGripper [
                             }
                           }
                         }
-                        DEF SHAPE2 Transform {
+                        DEF SHAPE2 Pose {
                           translation 0.039 0 0.0075
                           children [
                             Shape {
@@ -189,7 +194,7 @@ PROTO Robotiq3fGripper [
                         }
                       ]
                       name "finger_1_link_2"
-                      boundingObject Transform {
+                      boundingObject Pose {
                         translation 0.02694 -0.00895 0
                         rotation 0 0 1 6.270629385640825
                         children [
@@ -207,7 +212,7 @@ PROTO Robotiq3fGripper [
                       }
                     }
                   }
-                  DEF SHAPE1 Transform {
+                  DEF SHAPE1 Pose {
                     translation 0.05 -0.028 0
                     rotation 0 0 -1 0.52
                     children [
@@ -229,7 +234,7 @@ PROTO Robotiq3fGripper [
                   }
                 ]
                 name "finger_1_link_1"
-                boundingObject Transform {
+                boundingObject Pose {
                   translation 0.0123158 -0.02039 0
                   rotation 0 0 -1 0.4673706143591722
                   children [
@@ -247,7 +252,7 @@ PROTO Robotiq3fGripper [
                 }
               }
             }
-            DEF SHAPE0 Transform {
+            DEF SHAPE0 Pose {
               translation 0.02 0 0
               children [
                 Shape {
@@ -268,7 +273,7 @@ PROTO Robotiq3fGripper [
             }
           ]
           name "finger_1_link_0"
-          boundingObject Transform {
+          boundingObject Pose {
             translation 0.007 0.006 0
             children [
               Box {
@@ -293,10 +298,10 @@ PROTO Robotiq3fGripper [
         device [
           RotationalMotor {
             name "palm_finger_2_joint"
-            maxVelocity 100
-            minPosition -0.25
-            maxPosition 0.16
-            maxTorque 100
+            maxVelocity 100.0
+            minPosition -0.192
+            maxPosition 0.1784
+            maxTorque 100.0
           }
           PositionSensor {
             name "palm_finger_2_joint_sensor"
@@ -308,15 +313,17 @@ PROTO Robotiq3fGripper [
           children [
             HingeJoint {
               jointParameters HingeJointParameters {
+                position 0.0495
                 axis 0 0 1
                 anchor 0.02 0 0
               }
               device [
                 RotationalMotor {
                   name "finger_2_joint_1"
-                  maxVelocity 100
-                  maxPosition 3.1416
-                  maxTorque 100
+                  maxVelocity 100.0
+                  minPosition 0.0495
+                  maxPosition 1.2218
+                  maxTorque 100.0
                 }
                 PositionSensor {
                   name "finger_2_joint_1_sensor"
@@ -333,9 +340,9 @@ PROTO Robotiq3fGripper [
                     device [
                       RotationalMotor {
                         name "finger_2_joint_2"
-                        maxVelocity 100
-                        maxPosition 3.1416
-                        maxTorque 100
+                        maxVelocity 100.0
+                        maxPosition 1.5708
+                        maxTorque 100.0
                       }
                       PositionSensor {
                         name "finger_2_joint_2_sensor"
@@ -347,15 +354,17 @@ PROTO Robotiq3fGripper [
                       children [
                         HingeJoint {
                           jointParameters HingeJointParameters {
+                            position -0.0523
                             axis 0 0 1
                             anchor 0.039 0 0
                           }
                           device [
                             RotationalMotor {
                               name "finger_2_joint_3"
-                              maxVelocity 100
-                              maxPosition 3.1416
-                              maxTorque 100
+                              maxVelocity 100.0
+                              minPosition -1.2217
+                              maxPosition -0.0523
+                              maxTorque 100.0
                             }
                             PositionSensor {
                               name "finger_2_joint_3_sensor"
@@ -367,7 +376,7 @@ PROTO Robotiq3fGripper [
                               USE SHAPE3
                             ]
                             name "finger_2_link_3"
-                            boundingObject Transform {
+                            boundingObject Pose {
                               translation 0.018 0.00913 0
                               rotation 0 0 1 0.5202587712816532
                               children [
@@ -388,7 +397,7 @@ PROTO Robotiq3fGripper [
                         USE SHAPE2
                       ]
                       name "finger_2_link_2"
-                      boundingObject Transform {
+                      boundingObject Pose {
                         translation 0.02694 -0.00895 0
                         rotation 0 0 1 6.270629385640825
                         children [
@@ -409,7 +418,7 @@ PROTO Robotiq3fGripper [
                   USE SHAPE1
                 ]
                 name "finger_2_link_1"
-                boundingObject Transform {
+                boundingObject Pose {
                   translation 0.012315 -0.02039 0
                   rotation 0 0 -1 0.4673706143591722
                   children [
@@ -430,7 +439,7 @@ PROTO Robotiq3fGripper [
             USE SHAPE0
           ]
           name "finger_2_link_0"
-          boundingObject Transform {
+          boundingObject Pose {
             translation 0.007 0.006 0
             children [
               Box {
@@ -447,21 +456,23 @@ PROTO Robotiq3fGripper [
           }
         }
       }
-      Transform {
+      Pose {
         translation 0.0455 0.0214 0
         rotation 0 0 1 1.57
         children [
           HingeJoint {
             jointParameters HingeJointParameters {
+              position 0.0495
               axis 0 0 1
               anchor 0.02 0 0
             }
             device [
               RotationalMotor {
                 name "finger_middle_joint_1"
-                maxVelocity 100
-                maxPosition 3.1416
-                maxTorque 100
+                maxVelocity 100.0
+                minPosition 0.0495
+                maxPosition 1.2218
+                maxTorque 100.0
               }
               PositionSensor {
                 name "finger_middle_joint_1_sensor"
@@ -478,9 +489,9 @@ PROTO Robotiq3fGripper [
                   device [
                     RotationalMotor {
                       name "finger_middle_joint_2"
-                      maxVelocity 100
-                      maxPosition 3.1416
-                      maxTorque 100
+                      maxVelocity 100.0
+                      maxPosition 1.5708
+                      maxTorque 100.0
                     }
                     PositionSensor {
                       name "finger_middle_joint_2_sensor"
@@ -492,15 +503,17 @@ PROTO Robotiq3fGripper [
                     children [
                       HingeJoint {
                         jointParameters HingeJointParameters {
+                          position -0.0523
                           axis 0 0 1
                           anchor 0.039 0 0
                         }
                         device [
                           RotationalMotor {
                             name "finger_middle_joint_3"
-                            maxVelocity 100
-                            maxPosition 3.1416
-                            maxTorque 100
+                            maxVelocity 100.0
+                            minPosition -1.2217
+                            maxPosition -0.0523
+                            maxTorque 100.0
                           }
                           PositionSensor {
                             name "finger_middle_joint_3_sensor"
@@ -512,7 +525,7 @@ PROTO Robotiq3fGripper [
                             USE SHAPE3
                           ]
                           name "finger_middle_link_3"
-                          boundingObject Transform {
+                          boundingObject Pose {
                             translation 0.018 0.00913 0
                             rotation 0 0 1 0.5202587712816532
                             children [
@@ -533,7 +546,7 @@ PROTO Robotiq3fGripper [
                       USE SHAPE2
                     ]
                     name "finger_middle_link_2"
-                    boundingObject Transform {
+                    boundingObject Pose {
                       translation 0.02694 -0.008952 0
                       rotation 0 0 1 6.270629385640825
                       children [
@@ -554,7 +567,7 @@ PROTO Robotiq3fGripper [
                 USE SHAPE1
               ]
               name "finger_middle_link_1"
-              boundingObject Transform {
+              boundingObject Pose {
                 translation 0.01231 -0.02039 0
                 rotation 0 0 -1 0.4673706143591722
                 children [
@@ -579,7 +592,7 @@ PROTO Robotiq3fGripper [
     name IS name
     boundingObject Group {
       children [
-        Transform {
+        Pose {
           translation 0 -0.029 0
           children [
             Cylinder {
@@ -588,7 +601,7 @@ PROTO Robotiq3fGripper [
             }
           ]
         }
-        Transform {
+        Pose {
           translation 0 0.005 0
           children [
             Box {

@@ -71,20 +71,14 @@ void MotionPlayer::writeActuators() {
   Pose *afterPose = NULL;
   foreach (Pose *pose, mMotion->poses()) {
     int poseTime = pose->time();
-    if (!beforePose && poseTime <= currentTime) {
-      beforePose = pose;
-      continue;
-    } else if (!afterPose && poseTime >= currentTime) {
-      afterPose = pose;
-      continue;
-    }
-
-    if (beforePose && poseTime < currentTime && poseTime > beforePose->time()) {
-      beforePose = pose;
-      continue;
-    } else if (afterPose && poseTime > currentTime && poseTime < afterPose->time()) {
-      afterPose = pose;
-      continue;
+    if (poseTime <= currentTime) {
+      // cppcheck-suppress knownConditionTrueFalse
+      if (!beforePose || (poseTime < currentTime && poseTime > beforePose->time()))
+        beforePose = pose;
+    } else {
+      // cppcheck-suppress knownConditionTrueFalse
+      if (!afterPose || (poseTime > currentTime && poseTime < afterPose->time()))
+        afterPose = pose;
     }
   }
 
@@ -104,8 +98,8 @@ void MotionPlayer::writeActuators() {
       afterPose->select();
 
     for (int i = 0; i < count; i++) {
-      MotorTargetState *beforeState = beforePose->states()[i];
-      MotorTargetState *afterState = afterPose->states()[i];
+      const MotorTargetState *beforeState = beforePose->states()[i];
+      const MotorTargetState *afterState = afterPose->states()[i];
 
       assert(beforeState->motor()->tag() == afterState->motor()->tag());
 
@@ -159,7 +153,7 @@ void MotionPlayer::updateMotionDuration() {
   if (!mMotion)
     return;
 
-  foreach (Pose *pose, mMotion->poses()) {
+  foreach (const Pose *pose, mMotion->poses()) {
     if (pose->time() > mMotionDuration)
       mMotionDuration = pose->time();
   }

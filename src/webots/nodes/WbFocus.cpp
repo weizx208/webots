@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -72,8 +72,8 @@ void WbFocus::updateMinFocalDistance() {
   if (WbFieldChecker::resetDoubleIfNegative(this, mMinFocalDistance, 0.0))
     return;
   if (mMinFocalDistance->value() > mMaxFocalDistance->value()) {
-    warn(tr("Invalid 'minFocalDistance' changed to %1. The value should be smaller or equal to 'maxFocalDistance'.")
-           .arg(mMaxFocalDistance->value()));
+    parsingWarn(tr("Invalid 'minFocalDistance' changed to %1. The value should be smaller or equal to 'maxFocalDistance'.")
+                  .arg(mMaxFocalDistance->value()));
     mMinFocalDistance->setValue(mMaxFocalDistance->value());
     return;
   }
@@ -81,8 +81,8 @@ void WbFocus::updateMinFocalDistance() {
 
 void WbFocus::updateMaxFocalDistance() {
   if (mMaxFocalDistance->value() < mMinFocalDistance->value()) {
-    warn(tr("Invalid 'maxFocalDistance' changed to %1. The value should be bigger or equal to 'minFocalDistance'.")
-           .arg(mMinFocalDistance->value() + 0.1));
+    parsingWarn(tr("Invalid 'maxFocalDistance' changed to %1. The value should be bigger or equal to 'minFocalDistance'.")
+                  .arg(mMinFocalDistance->value() + 0.1));
     mMaxFocalDistance->setValue(mMinFocalDistance->value() + 0.1);
     return;
   }

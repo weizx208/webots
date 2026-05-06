@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,7 @@
 
 #include "WbLightSensor.hpp"
 
+#include "WbDataStream.hpp"
 #include "WbFieldChecker.hpp"
 #include "WbLight.hpp"
 #include "WbLookupTable.hpp"
@@ -29,7 +30,7 @@
 #include "WbWrenRenderingContext.hpp"
 #include "WbWrenShaders.hpp"
 
-#include "../../lib/Controller/api/messages.h"
+#include "../../controller/c/messages.h"
 
 #include <wren/config.h>
 #include <wren/material.h>
@@ -125,6 +126,8 @@ void WbLightSensor::init() {
   mMaterial = NULL;
   mRenderable = NULL;
   mMesh = NULL;
+
+  mNeedToReconfigure = false;
 }
 
 WbLightSensor::WbLightSensor(WbTokenizer *tokenizer) : WbSolidDevice("LightSensor", tokenizer) {
@@ -182,17 +185,34 @@ void WbLightSensor::handleMessage(QDataStream &stream) {
   }
 }
 
-void WbLightSensor::writeAnswer(QDataStream &stream) {
+void WbLightSensor::writeAnswer(WbDataStream &stream) {
   if (refreshSensorIfNeeded() || mSensor->hasPendingValue()) {
     stream << tag();
+    stream << (unsigned char)C_LIGHT_SENSOR_DATA;
     stream << mValue;
 
     mSensor->resetPendingValue();
   }
+
+  if (mNeedToReconfigure)
+    addConfigure(stream);
 }
 
-void WbLightSensor::writeConfigure(QDataStream &) {
+void WbLightSensor::addConfigure(WbDataStream &stream) {
+  stream << (short unsigned int)tag();
+  stream << (unsigned char)C_CONFIGURE;
+  stream << (int)mLookupTable->size();
+  for (int i = 0; i < mLookupTable->size(); i++) {
+    stream << (double)mLookupTable->item(i).x();
+    stream << (double)mLookupTable->item(i).y();
+    stream << (double)mLookupTable->item(i).z();
+  }
+  mNeedToReconfigure = false;
+}
+
+void WbLightSensor::writeConfigure(WbDataStream &stream) {
   mSensor->connectToRobotSignal(robot());
+  addConfigure(stream);
 }
 
 void WbLightSensor::updateLookupTable() {
@@ -200,6 +220,8 @@ void WbLightSensor::updateLookupTable() {
   delete mLut;
   mLut = new WbLookupTable(*mLookupTable);
   mValue = mLut->minValue();
+
+  mNeedToReconfigure = true;
 }
 
 void WbLightSensor::updateResolution() {
@@ -231,7 +253,7 @@ void WbLightSensor::prePhysicsStep(double ms) {
 }
 
 void WbLightSensor::updateRaysSetupIfNeeded() {
-  updateTransformAfterPhysicsStep();
+  updateTransformForPhysicsStep();
   foreach (LightRay *ray, mRayList)
     ray->recomputeRayDirection();
 }
@@ -293,9 +315,10 @@ void WbLightSensor::computeLightMeasurement(const WbLight *light,
 
     // compute spot's beam effect
     const WbVector3 &dir = spotLight->direction();
-    WbVector3 R = -dir;
+    const WbPose *up = spotLight->upperPose();
+    WbVector3 R = up ? -(up->rotation().toMatrix3() * dir) : -dir;
     R.normalize();
-    double alpha = acos(lightDirection.dot(R));  // both lightDirection and R are normalized
+    double alpha = WbMathsUtilities::clampedAcos(lightDirection.dot(R));  // both lightDirection and R are normalized
     assert(!std::isnan(alpha));
     if (alpha > spotLight->cutOffAngle())
       spotFactor = 0.0;

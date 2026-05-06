@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,9 +23,9 @@
 #include <webots/keyboard.h>
 #include <webots/led.h>
 #include <webots/motor.h>
+#include <webots/plugins/robot_window/default.h>
 #include <webots/robot.h>
 #include <webots/touch_sensor.h>
-#include <webots/utils/default_robot_window.h>
 
 #include <math.h>
 #include <stdio.h>
@@ -160,8 +160,8 @@ int main(int argc, char **argv) {
   for (i = 0; i < N_BUTTONS; i++)
     buttons_pressed[i] = false;
   while (wb_robot_step(TIME_STEP) != -1) {
-    const char *message = wb_robot_wwi_receive_text();
-    if (message) {
+    const char *message;
+    while ((message = wb_robot_wwi_receive_text())) {
       if (strcmp(message, "configure") == 0)
         wbu_default_robot_window_configure();
       else if (strncmp(message, "mousedown ", 10) == 0) {

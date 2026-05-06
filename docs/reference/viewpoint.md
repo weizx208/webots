@@ -4,23 +4,30 @@
 Viewpoint {
   SFFloat    fieldOfView             0.785398         # [0, pi]
   SFRotation orientation             0 0 1 0          # unit axis, (-inf, inf) angle
-  SFVec3f    position                0 0 0            # any vector
+  SFVec3f    position                -10 0 0          # any vector
   SFString   description             ""               # any string
   SFFloat    near                    0.05             # [0, far]
   SFFloat    far                     0.0              # [near, inf)
+  SFFloat    exposure                1.0              # [0, inf)
   SFString   follow                  ""               # any string
-  SFBool     followType              "Tracking Shot"  # {"None", "Tracking Shot", "Mounted Shot", "Pan and Tilt Shot"}
+  SFString   followType              "Tracking Shot"  # {"None", "Tracking Shot", "Mounted Shot", "Pan and Tilt Shot"}
   SFFloat    followSmoothness        0.5              # [0, 1]
   SFNode     lensFlare               NULL             # {LensFlare, PROTO}
   SFFloat    ambientOcclusionRadius  2                # [0, inf)
-  SFFloat    bloomThreshold          10               # [0, inf)
+  SFFloat    bloomThreshold          21               # [0, inf)
 }
 ```
 
 The [Viewpoint](#viewpoint) node defines a specific location in the local coordinate system from which the user may view the scene.
 
+%figure "Viewpoint oriented towards a robot"
+
+![viewpoint.png](images/viewpoint.thumbnail.jpg)
+
+%end
+
 The `position` and `orientation` fields of the [Viewpoint](#viewpoint) node specify absolute locations in the coordinate system.
-In the default position and orientation, the viewer is on the *z*-axis, looking down the *-z*-axis toward the origin with *+x* to the right and *+y* straight up.
+In the default position and orientation, the viewer is on the z-axis, looking down the *x*-axis toward the origin with *+x* to the right and *+y* straight up.
 
 Navigating in the 3D view by dragging the mouse pointer dynamically changes the `position` and the `orientation` fields of the [Viewpoint](#viewpoint) node.
 
@@ -38,6 +45,8 @@ Setting a far clipping plane will filter out far objects and can therefore great
 The `near`, `far` and the `fieldOfView` fields define together the viewing frustum.
 Any 3D shape outside this frustum won't be rendered.
 Hence, shapes too close (standing between the camera and the near plane) won't appear.
+
+The `exposure` field defines the photometric exposure of the scene in joule per square meter (J/m^2).
 
 The `follow` field can be used to specify the name of a robot (or other solid object) that the viewpoint will follow during the simulation.
 If the string is empty, or if it does not correspond to any solid object, then the viewpoint will remain fixed.
