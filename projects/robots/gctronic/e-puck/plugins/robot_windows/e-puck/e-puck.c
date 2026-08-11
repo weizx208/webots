@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,14 @@
 #include <webots/camera.h>
 #include <webots/device.h>
 #include <webots/distance_sensor.h>
+#include <webots/gyro.h>
 #include <webots/light_sensor.h>
 #include <webots/motor.h>
+#include <webots/plugins/robot_window/default.h>
+#include <webots/plugins/robot_window/robot_wwi.h>
 #include <webots/position_sensor.h>
 #include <webots/remote_control.h>
 #include <webots/robot.h>
-#include <webots/robot_wwi.h>
-#include <webots/utils/default_robot_window.h>
 #include <webots/utils/system.h>
 
 #include <math.h>
@@ -36,7 +37,7 @@
 
 #include "../../remote_controls/e-puck_bluetooth/UploaderData.hpp"
 
-static WbDeviceTag ps[8], ls[8], tof, accelerometer, camera, gs[3], motors[2], position_sensors[2];
+static WbDeviceTag ps[8], ls[8], tof, accelerometer, gyro, camera, gs[3], motors[2], position_sensors[2];
 static const int N_SENSORS = sizeof(ps) / sizeof(WbDeviceTag);
 static int gs_sensors_count = 0;
 static bool configured = false;
@@ -109,6 +110,7 @@ void wb_robot_window_init() {
     tof = 0;
 
   accelerometer = wb_robot_get_device("accelerometer");
+  gyro = wb_robot_get_device("gyro");
   camera = wb_robot_get_device("camera");
   motors[0] = wb_robot_get_device("left wheel motor");
   motors[1] = wb_robot_get_device("right wheel motor");
@@ -158,8 +160,8 @@ static void upload_progress_callback(int i, int j) {
 
 void wb_robot_window_step(int time_step) {
   int i;
-  const char *message = wb_robot_wwi_receive_text();
-  if (message) {
+  const char *message;
+  while ((message = wb_robot_wwi_receive_text())) {
     if (strcmp(message, "configure") == 0) {
       send_ports();
       wbu_default_robot_window_configure();
@@ -167,13 +169,15 @@ void wb_robot_window_step(int time_step) {
     } else if (strcmp(message, "enable") == 0) {
       wb_camera_enable(camera, time_step);
       wb_accelerometer_enable(accelerometer, time_step);
+      wb_gyro_enable(gyro, time_step);
       wb_position_sensor_enable(position_sensors[0], time_step);
       wb_position_sensor_enable(position_sensors[1], time_step);
       for (i = 0; i < N_SENSORS; i++) {
         wb_distance_sensor_enable(ps[i], time_step);
         wb_light_sensor_enable(ls[i], time_step);
       }
-      wb_distance_sensor_enable(tof, time_step);
+      if (tof != 0)
+        wb_distance_sensor_enable(tof, time_step);
       // optional ground sensors
       for (i = 0; i < gs_sensors_count; i++)
         wb_distance_sensor_enable(gs[i], time_step);
@@ -196,7 +200,7 @@ void wb_robot_window_step(int time_step) {
       wb_remote_control_custom_function(&upload);
       free(port);
       const char *data = &message[8 + n];
-      const char *path = wbu_system_short_path(wbu_system_webots_tmp_path());
+      const char *path = wbu_system_short_path(wbu_system_webots_instance_path(false));
       const char *filename = "e-puck.hex";
       char *full_path = (char *)malloc(strlen(path) + strlen(filename) + 1);
       sprintf(full_path, "%s%s", path, filename);
@@ -328,23 +332,25 @@ void wb_robot_window_step(int time_step) {
   if (strlen(update) + strlen(update_message) < UPDATE_MESSAGE_SIZE)
     strcat(update_message, update);
 
-  if (areDevicesReady && wb_camera_get_sampling_period(camera)) {
-    const char *path = wbu_system_short_path(wbu_system_webots_tmp_path());
-    const char *filename = "camera.jpg";
-    int pid = getpid();
-    int l = strlen(path) + strlen(filename) + 2 + 11;  // 11 = max length of an integer: -2147483648
-    char *full_path = (char *)malloc(l);
-    snprintf(full_path, l, "%s/%d%s", path, pid, filename);
-    wb_camera_save_image(camera, full_path, 90);
-    for (i = 0; i < l; i++)
-      if (full_path[i] == '\\')
-        full_path[i] = '/';
-    snprintf(update, UPDATE_SIZE, "file:///%s", full_path);
-    free(full_path);
+  if (wb_gyro_get_sampling_period(gyro)) {
+    const double *values = wb_gyro_get_values(gyro);
+    const char name[4] = "Gyro";
+    update[0] = '\0';
+    for (i = 0; i < 3; ++i) {
+      char s[12];  // "[+-]\d\d\.\d\d\d \0"
+      if (isnan(values[i]))
+        sprintf(s, "%c ", name[i]);
+      else
+        sprintf(s, "%.3f ", values[i]);
+      strcat(update, s);
+    }
   } else
-    snprintf(update, UPDATE_SIZE, "camera.jpg");
+    snprintf(update, UPDATE_SIZE, "gX gY gZ ");
   if (strlen(update) + strlen(update_message) < UPDATE_MESSAGE_SIZE)
     strcat(update_message, update);
+
+  if (areDevicesReady && wb_camera_get_sampling_period(camera))
+    wbu_default_robot_window_update();  // we send all the update to get the image in base64.
 
   for (i = 0; i < gs_sensors_count; i++) {
     double v;
@@ -353,14 +359,14 @@ void wb_robot_window_step(int time_step) {
     else
       v = NAN;
     if (isnan(v))
-      snprintf(update, UPDATE_SIZE, " -1");
+      snprintf(update, UPDATE_SIZE, "-1 ");
     else {
       int c = (v - 300.0) * 255.0 / 700.0;
       if (c > 255)
         c = 255;
       else if (c < 0)
         c = 0;
-      snprintf(update, UPDATE_SIZE, " %d", (int)c);
+      snprintf(update, UPDATE_SIZE, "%d ", c);
     }
     if (strlen(update) + strlen(update_message) < UPDATE_MESSAGE_SIZE)
       strcat(update_message, update);

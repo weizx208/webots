@@ -4,6 +4,7 @@
 # Build directories
 build
 com
+webots_catkin_ws
 
 # Compiled source
 *.exe
@@ -64,6 +65,13 @@ Thumbs.db
 /.clang-format
 /msys64
 /webots
+/webots-controller
 /webots.lnk
 /webots_debug_output.txt
 /util
+
+# world thumbnail files
+.*.jpg
+
+# Claude.ai
+/.claude

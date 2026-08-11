@@ -14,12 +14,12 @@ At the end of the chapter, links to further robotics algorithms are given.
 ### New World and New Controller
 
 > **Hands on #1**: Save the previous world as `collision_avoidance.wbt`.
-Create a new C (or any other language) controller called `epuck_avoid_collision` (for C++ and Java call it `EPuckAvoidCollision` instead) using the wizard.
+Create a new C (or any other language) controller called `epuck_avoid_collision` (for C++ and Java call it `EPuckAvoidCollision` instead) from the **File / New / New Robot Controller...** menu item.
 Modify the `controller` field of the `E-puck` node in order to associate it to the new controller.
 
 %spoiler "**Reminder**: How to create a new controller?"
 
-Select `New Robot Controller...` from the `Wizards` menu Then, choose your programming language and the file name.
+Select the **File / New / New Robot Controller...** menu item and choose your programming language and the file name.
 
 %end
 
@@ -140,8 +140,12 @@ This duration is specified in milliseconds and it must be a multiple of the valu
 %tab-end
 
 %tab "MATLAB"
-> **Hands on #2**: At the beginning of the controller file, define a variable that defines the duration of each physics step.
-This macro will be used as argument to the `Robot::step` function, and it will also be used to enable the devices.
+> **Hands on #2**: At the beginning of the controller file, add the `function` declaration (the name of the class should match exactly the name of the file).
+>```MATLAB
+> function epuck_avoid_collision
+>```
+Just after the function declaration define a variable that defines the duration of each physics step.
+This macro will be used as argument to the `wb_robot_step` function, and it will also be used to enable the devices.
 This duration is specified in milliseconds and it must be a multiple of the value in the `basicTimeStep` field of the [WorldInfo](../reference/worldinfo.md) node.
 > ```MATLAB
 > TIME_STEP = 64;
@@ -232,7 +236,7 @@ The Webots API has to be initialized using the `wb_robot_init` function and it h
 %tab-end
 
 %tab "MATLAB"
-> **Hands on #3**: In Matlab there is no main function, the program starts it's execution from the start of the file:
+> **Hands on #3**: In Matlab, the "main" function is the function definition at the start of the file:
 >```MATLAB
 > % initialize devices
 > % feedback loop: step simulation until receiving an exit event
@@ -309,13 +313,13 @@ Finally, use the information about the obstacle to actuate the wheels as follows
 > // modify speeds according to obstacles
 > if (left_obstacle) {
 >   // turn right
->   left_speed  += 0.5 * MAX_SPEED;
->   right_speed -= 0.5 * MAX_SPEED;
+>   left_speed  = 0.5 * MAX_SPEED;
+>   right_speed = -0.5 * MAX_SPEED;
 > }
 > else if (right_obstacle) {
 >   // turn left
->   left_speed  -= 0.5 * MAX_SPEED;
->   right_speed += 0.5 * MAX_SPEED;
+>   left_speed  = -0.5 * MAX_SPEED;
+>   right_speed = 0.5 * MAX_SPEED;
 > }
 > // write actuators inputs
 > wb_motor_set_velocity(left_motor, left_speed);
@@ -380,13 +384,13 @@ Finally, use the information about the obstacle to actuate the wheels as follows
 > // modify speeds according to obstacles
 > if (left_obstacle) {
 >   // turn right
->   leftSpeed  += 0.5 * MAX_SPEED;
->   rightSpeed -= 0.5 * MAX_SPEED;
+>   leftSpeed  = 0.5 * MAX_SPEED;
+>   rightSpeed = -0.5 * MAX_SPEED;
 > }
 > else if (right_obstacle) {
 >   // turn left
->   leftSpeed  -= 0.5 * MAX_SPEED;
->   rightSpeed += 0.5 * MAX_SPEED;
+>   leftSpeed  = -0.5 * MAX_SPEED;
+>   rightSpeed = 0.5 * MAX_SPEED;
 > }
 > // write actuators inputs
 > leftMotor->setVelocity(leftSpeed);
@@ -409,13 +413,13 @@ Reload the world.
 > ]
 >
 > for i in range(8):
->     ps.append(robot.getDistanceSensor(psNames[i]))
+>     ps.append(robot.getDevice(psNames[i]))
 >     ps[i].enable(TIME_STEP)
 > ```
 After initialization of the devices, initialize the motors:
 > ```python
-> leftMotor = robot.getMotor('left wheel motor')
-> rightMotor = robot.getMotor('right wheel motor')
+> leftMotor = robot.getDevice('left wheel motor')
+> rightMotor = robot.getDevice('right wheel motor')
 > leftMotor.setPosition(float('inf'))
 > rightMotor.setPosition(float('inf'))
 > leftMotor.setVelocity(0.0)
@@ -444,12 +448,12 @@ Finally, use the information about the obstacle to actuate the wheels as follows
 > # modify speeds according to obstacles
 > if left_obstacle:
 >     # turn right
->     leftSpeed  += 0.5 * MAX_SPEED
->     rightSpeed -= 0.5 * MAX_SPEED
+>     leftSpeed  = 0.5 * MAX_SPEED
+>     rightSpeed = -0.5 * MAX_SPEED
 > elif right_obstacle:
 >     # turn left
->     leftSpeed  -= 0.5 * MAX_SPEED
->     rightSpeed += 0.5 * MAX_SPEED
+>     leftSpeed  = -0.5 * MAX_SPEED
+>     rightSpeed = 0.5 * MAX_SPEED
 > # write actuators inputs
 > leftMotor.setVelocity(leftSpeed)
 > rightMotor.setVelocity(rightSpeed)
@@ -511,13 +515,13 @@ Finally, use the information about the obstacle to actuate the wheels as follows
 > // modify speeds according to obstacles
 > if (left_obstacle) {
 >   // turn right
->   leftSpeed  += 0.5 * MAX_SPEED;
->   rightSpeed -= 0.5 * MAX_SPEED;
+>   leftSpeed  = 0.5 * MAX_SPEED;
+>   rightSpeed = -0.5 * MAX_SPEED;
 > }
 > else if (right_obstacle) {
 >   // turn left
->   leftSpeed  -= 0.5 * MAX_SPEED;
->   rightSpeed += 0.5 * MAX_SPEED;
+>   leftSpeed  = -0.5 * MAX_SPEED;
+>   rightSpeed = 0.5 * MAX_SPEED;
 > }
 > // write actuators inputs
 > leftMotor.setVelocity(leftSpeed);
@@ -574,12 +578,12 @@ Finally, use the information about the obstacle to actuate the wheels as follows
 > % modify speeds according to obstacles
 > if left_obstacle
 >   % turn right
->   left_speed  = left_speed + 0.5 * MAX_SPEED;
->   right_speed = right_speed - 0.5 * MAX_SPEED;
+>   left_speed  = 0.5 * MAX_SPEED;
+>   right_speed = -0.5 * MAX_SPEED;
 > elseif right_obstacle
 >   % turn left
->   left_speed  = left_speed - 0.5 * MAX_SPEED;
->   right_speed = right_speed + 0.5 * MAX_SPEED;
+>   left_speed  = -0.5 * MAX_SPEED;
+>   right_speed = 0.5 * MAX_SPEED;
 > end
 > % write actuators inputs
 > wb_motor_set_velocity(left_motor, left_speed);
@@ -658,13 +662,13 @@ int main(int argc, char **argv) {
     // modify speeds according to obstacles
     if (left_obstacle) {
       // turn right
-      left_speed  += 0.5 * MAX_SPEED;
-      right_speed -= 0.5 * MAX_SPEED;
+      left_speed  = 0.5 * MAX_SPEED;
+      right_speed = -0.5 * MAX_SPEED;
     }
     else if (right_obstacle) {
       // turn left
-      left_speed  -= 0.5 * MAX_SPEED;
-      right_speed += 0.5 * MAX_SPEED;
+      left_speed  = -0.5 * MAX_SPEED;
+      right_speed = 0.5 * MAX_SPEED;
     }
 
     // write actuators inputs
@@ -740,13 +744,13 @@ int main(int argc, char **argv) {
     // modify speeds according to obstacles
     if (left_obstacle) {
       // turn right
-      leftSpeed  += 0.5 * MAX_SPEED;
-      rightSpeed -= 0.5 * MAX_SPEED;
+      leftSpeed  = 0.5 * MAX_SPEED;
+      rightSpeed = -0.5 * MAX_SPEED;
     }
     else if (right_obstacle) {
       // turn left
-      leftSpeed  -= 0.5 * MAX_SPEED;
-      rightSpeed += 0.5 * MAX_SPEED;
+      leftSpeed  = -0.5 * MAX_SPEED;
+      rightSpeed = 0.5 * MAX_SPEED;
     }
     // write actuators inputs
     leftMotor->setVelocity(leftSpeed);
@@ -779,11 +783,11 @@ psNames = [
 ]
 
 for i in range(8):
-    ps.append(robot.getDistanceSensor(psNames[i]))
+    ps.append(robot.getDevice(psNames[i]))
     ps[i].enable(TIME_STEP)
 
-leftMotor = robot.getMotor('left wheel motor')
-rightMotor = robot.getMotor('right wheel motor')
+leftMotor = robot.getDevice('left wheel motor')
+rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setPosition(float('inf'))
 rightMotor.setPosition(float('inf'))
 leftMotor.setVelocity(0.0)
@@ -806,12 +810,12 @@ while robot.step(TIME_STEP) != -1:
     # modify speeds according to obstacles
     if left_obstacle:
         # turn right
-        leftSpeed  += 0.5 * MAX_SPEED
-        rightSpeed -= 0.5 * MAX_SPEED
+        leftSpeed  = 0.5 * MAX_SPEED
+        rightSpeed = -0.5 * MAX_SPEED
     elif right_obstacle:
         # turn left
-        leftSpeed  -= 0.5 * MAX_SPEED
-        rightSpeed += 0.5 * MAX_SPEED
+        leftSpeed  = -0.5 * MAX_SPEED
+        rightSpeed = 0.5 * MAX_SPEED
     # write actuators inputs
     leftMotor.setVelocity(leftSpeed)
     rightMotor.setVelocity(rightSpeed)
@@ -877,13 +881,13 @@ public class EPuckAvoidCollision {
       // modify speeds according to obstacles
       if (left_obstacle) {
         // turn right
-        leftSpeed  += 0.5 * MAX_SPEED;
-        rightSpeed -= 0.5 * MAX_SPEED;
+        leftSpeed  = 0.5 * MAX_SPEED;
+        rightSpeed = -0.5 * MAX_SPEED;
       }
       else if (right_obstacle) {
         // turn left
-        leftSpeed  -= 0.5 * MAX_SPEED;
-        rightSpeed += 0.5 * MAX_SPEED;
+        leftSpeed  = -0.5 * MAX_SPEED;
+        rightSpeed = 0.5 * MAX_SPEED;
       }
       // write actuators inputs
       leftMotor.setVelocity(leftSpeed);
@@ -896,6 +900,8 @@ public class EPuckAvoidCollision {
 
 %tab "MATLAB"
 ```MATLAB
+function epuck_avoid_collision
+
 % time in [ms] of a simulation step
 TIME_STEP = 64;
 
@@ -935,12 +941,12 @@ while wb_robot_step(TIME_STEP) ~= -1
   % modify speeds according to obstacles
   if left_obstacle
     % turn right
-    left_speed   = left_speed + 0.5 * MAX_SPEED;
-    right_speed  = right_speed - 0.5 * MAX_SPEED;
+    left_speed   = 0.5 * MAX_SPEED;
+    right_speed  = -0.5 * MAX_SPEED;
   elseif right_obstacle
     % turn left
-    left_speed  = left_speed - 0.5 * MAX_SPEED;
-    right_speed = right_speed + 0.5 * MAX_SPEED;
+    left_speed  = -0.5 * MAX_SPEED;
+    right_speed = 0.5 * MAX_SPEED;
   end
   % write actuators inputs
   wb_motor_set_velocity(left_motor, left_speed);
@@ -956,7 +962,7 @@ end
 ### Solution: World File
 
 To compare your world with the solution, go to your files and find the folder named "my\_first\_simulation" created in [Tutorial 1](tutorial-1-your-first-simulation-in-webots.md), then go to the "worlds" folder and open with a text editor the right world.
-[This solution](https://github.com/cyberbotics/webots/blob/master/projects/samples/tutorials/worlds/collision_avoidance.wbt) as the others is located in the [solution directory](https://github.com/cyberbotics/webots/blob/master/projects/samples/tutorials/worlds/).
+[This solution]({{ url.github_tree }}/projects/samples/tutorials/worlds/collision_avoidance.wbt) as the others is located in the [solution directory]({{ url.github_tree }}/projects/samples/tutorials/worlds/).
 
 ### Conclusion
 

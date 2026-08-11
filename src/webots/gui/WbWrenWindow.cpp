@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,7 @@
 #include "WbLightRepresentation.hpp"
 #include "WbLog.hpp"
 #include "WbMessageBox.hpp"
-#include "WbMultimediaStreamer.hpp"
+#include "WbMultimediaStreamingServer.hpp"
 #include "WbPerformanceLog.hpp"
 #include "WbPreferences.hpp"
 #include "WbSysInfo.hpp"
@@ -64,7 +64,8 @@ WbWrenWindow::WbWrenWindow() :
   mWrenMainFrameBuffer(NULL),
   mWrenMainFrameBufferTexture(NULL),
   mWrenNormalFrameBufferTexture(NULL),
-  mWrenDepthFrameBufferTexture(NULL) {
+  mWrenDepthFrameBufferTexture(NULL),
+  mVideoStreamingServer(NULL) {
   assert(WbWrenWindow::cInstance == NULL);
   WbWrenWindow::cInstance = this;
 
@@ -183,7 +184,7 @@ void WbWrenWindow::initialize() {
 }
 
 void WbWrenWindow::updateWrenViewportDimensions() {
-  const int ratio = (int)devicePixelRatio();
+  const double ratio = devicePixelRatio();
   wr_viewport_set_pixel_ratio(wr_scene_get_viewport(wr_scene_get_instance()), ratio);
   WbVideoRecorder::instance()->setScreenPixelRatio(ratio);
 }
@@ -199,19 +200,17 @@ void WbWrenWindow::renderLater() {
   }
 }
 
-void WbWrenWindow::renderNow(bool culling) {
-  if (!isExposed() || !wr_gl_state_is_initialized())
+void WbWrenWindow::renderNow(bool culling, bool offScreen) {
+  if ((!isExposed() && !offScreen) || !wr_gl_state_is_initialized())
     return;
 
+  static int first = true;
 #ifdef __APPLE__
   // Make sure all events are processed before first render, omitting this snippet
   // causes graphical corruption on macOS due to the main framebuffer being invalid.
   // On Windows, this fix causes a crash on startup for certain worlds.
-  static int first = true;
-  if (first) {
-    first = false;
+  if (first)
     QCoreApplication::processEvents(QEventLoop::AllEvents);
-  }
 #endif
 
   WbPerformanceLog *log = WbPerformanceLog::instance();
@@ -226,17 +225,21 @@ void WbWrenWindow::renderNow(bool culling) {
 
   WbWrenOpenGlContext::makeWrenCurrent();
 
-  wr_scene_render(wr_scene_get_instance(), NULL, culling);
+  wr_scene_render(wr_scene_get_instance(), NULL, culling, offScreen);
 
-  WbWrenOpenGlContext::instance()->swapBuffers(this);
+  if (!offScreen)
+    WbWrenOpenGlContext::instance()->swapBuffers(this);
   WbWrenOpenGlContext::doneWren();
 
-  WbMultimediaStreamer *multimediaStreamer = WbMultimediaStreamer::instance();
-  if (multimediaStreamer->isReady())
-    feedMultimediaStreamer();
+  if (mVideoStreamingServer && mVideoStreamingServer->isNewFrameNeeded() && !first)
+    // Skip the first call to 'renderNow()' because OpenGL context seems to be not ready. Not skipping causes a freeze.
+    mVideoStreamingServer->sendImage(grabWindowBufferNow());
 
   if (log)
     log->stopMeasure(WbPerformanceLog::MAIN_RENDERING);
+
+  if (first)
+    first = false;
 }
 
 bool WbWrenWindow::event(QEvent *event) {
@@ -290,8 +293,8 @@ void WbWrenWindow::flipAndScaleDownImageBuffer(const unsigned char *source, unsi
   // - The `unsigned char *` to `int *` cast is possible assuming that a pixel is coded as four bytes (RGBA)
   //   aligned on an `int *` boundary.
   // - A preliminary `unsigned char *` to `void *` cast is required to by-pass "cast-align" clang warnings.
-  const uint32_t *src = (const uint32_t *)((void *)source);
-  uint32_t *dst = (uint32_t *)((void *)destination);
+  const uint32_t *src = static_cast<const uint32_t *>(static_cast<void *>(const_cast<unsigned char *>(source)));
+  uint32_t *dst = static_cast<uint32_t *>(static_cast<void *>(destination));
 
   for (int y = 0; y < h; y++) {
     for (int x = 0; x < w; x++)
@@ -310,12 +313,11 @@ QImage WbWrenWindow::grabWindowBufferNow() {
     mSnapshotBufferHeight = destinationHeight;
     mSnapshotBuffer = new unsigned char[4 * destinationWidth * destinationHeight];
   }
-  const qreal ratio = devicePixelRatio();
-  const int sourceWidth = destinationWidth * ratio;
-  const int sourceHeight = destinationHeight * ratio;
+  const int sourceWidth = destinationWidth;
+  const int sourceHeight = destinationHeight;
   unsigned char *temp = new unsigned char[4 * sourceWidth * sourceHeight];
   readPixels(sourceWidth, sourceHeight, GL_BGRA, temp);
-  flipAndScaleDownImageBuffer(temp, mSnapshotBuffer, sourceWidth, sourceHeight, ratio);
+  flipAndScaleDownImageBuffer(temp, mSnapshotBuffer, sourceWidth, sourceHeight, 1.0);
   delete[] temp;
   WbWrenOpenGlContext::doneWren();
 
@@ -325,9 +327,8 @@ QImage WbWrenWindow::grabWindowBufferNow() {
 void WbWrenWindow::initVideoPBO() {
   WbWrenOpenGlContext::makeWrenCurrent();
 
-  const int ratio = (int)devicePixelRatio();
-  mVideoWidth = width() * ratio;
-  mVideoHeight = height() * ratio;
+  mVideoWidth = width();
+  mVideoHeight = height();
   const int size = 4 * mVideoWidth * mVideoHeight;
   wr_scene_init_frame_capture(wr_scene_get_instance(), PBO_COUNT, mVideoPBOIds, size);
   mVideoPBOIndex = -1;
@@ -356,7 +357,7 @@ void WbWrenWindow::processVideoPBO() {
   // Process previously copied pixels
   WrScene *scene = wr_scene_get_instance();
   wr_scene_bind_pixel_buffer(scene, mVideoPBOIds[mVideoPBOIndex]);
-  unsigned char *buffer = (unsigned char *)wr_scene_map_pixel_buffer(scene, GL_READ_ONLY);
+  unsigned char *buffer = static_cast<unsigned char *>(wr_scene_map_pixel_buffer(scene, GL_READ_ONLY));
   if (buffer) {
     emit videoImageReady(buffer);
     wr_scene_unmap_pixel_buffer(scene);
@@ -433,31 +434,15 @@ QSize WbWrenWindow::sizeHint() const {
   return QSize(400, 400);
 }
 
+void WbWrenWindow::setVideoStreamingServer(WbMultimediaStreamingServer *streamingServer) {
+  mVideoStreamingServer = streamingServer;
+  connect(mVideoStreamingServer, &WbMultimediaStreamingServer::imageRequested, this, &WbWrenWindow::feedMultimediaStreamer);
+}
+
 void WbWrenWindow::feedMultimediaStreamer() {
-  // Skip the first call to 'renderNow()' because OpenGL
-  // context seems to be not ready. Not skipping causes
-  // a freeze.
-  static bool skipFirstFrame = true;
-  if (skipFirstFrame)
-    skipFirstFrame = false;
-  else {
-    WbMultimediaStreamer *multimediaStreamer = WbMultimediaStreamer::instance();
-    void *buffer = multimediaStreamer->buffer();
-    readPixels(multimediaStreamer->imageWidth(), multimediaStreamer->imageHeight(), GL_RGB, buffer);
-    multimediaStreamer->sendImage();
-  }
+  renderNow();
 }
 
 void WbWrenWindow::readPixels(int width, int height, unsigned int format, void *buffer) {
-#ifdef __linux__
-  if (WbSysInfo::isVirtualMachine()) {
-    // Reading the front buffer is not supported by all OpenGL implementations (especially on Linux running in a VM).
-    // In that case, to read the front buffer, we need to swap the buffers, read the back buffer and swap the buffers again.
-    // However, doing this may cause flickering on platforms where reading the front buffer is supported (including macOS).
-    WbWrenOpenGlContext::instance()->swapBuffers(this);
-    wr_scene_get_main_buffer(wr_scene_get_instance(), width, height, format, GL_UNSIGNED_BYTE, GL_BACK, buffer);
-    WbWrenOpenGlContext::instance()->swapBuffers(this);
-  } else
-#endif
-    wr_scene_get_main_buffer(wr_scene_get_instance(), width, height, format, GL_UNSIGNED_BYTE, GL_FRONT, buffer);
+  wr_scene_get_main_buffer(width, height, format, GL_UNSIGNED_BYTE, buffer);
 }

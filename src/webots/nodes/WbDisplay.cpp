@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 #include "WbAppearance.hpp"
 #include "WbCamera.hpp"
+#include "WbDataStream.hpp"
 #include "WbDisplayFont.hpp"
 #include "WbImageTexture.hpp"
 #include "WbMFNode.hpp"
@@ -35,9 +36,13 @@
 #include <climits>
 #include <cmath>
 #include "../../../include/controller/c/webots/display.h"  // contains the definitions of the image format
-#include "../../lib/Controller/api/messages.h"  // contains the definitions for the macros C_DISPLAY_SET_COLOR, C_DISPLAY_SET_ALPHA, C_DISPLAY_SET_OPACITY, ...
+#include "../../controller/c/messages.h"  // contains the definitions for the macros C_DISPLAY_SET_COLOR, C_DISPLAY_SET_ALPHA, C_DISPLAY_SET_OPACITY, ...
 
 #include <QtCore/QDataStream>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #define SHIFT(value, shift) (((value) >> (shift)) & 0xFF)
 
@@ -94,7 +99,7 @@ void WbDisplay::init() {
   QString error = mDisplayFont->error();
   if (!error.isEmpty())
     warn(error);
-  setFont((char *)"Lucida Console", 8);
+  setFont(const_cast<char *>("Lucida Console"), 8);
 }
 
 WbDisplay::WbDisplay(WbTokenizer *tokenizer) : WbRenderingDevice("Display", tokenizer) {
@@ -162,15 +167,17 @@ void WbDisplay::findImageTextures() {
     return;
 
   WbNode *firstChild = children().item(0);
-  WbShape *shape = dynamic_cast<WbShape *>(firstChild);
+  const WbShape *shape = dynamic_cast<WbShape *>(firstChild);
   if (shape) {
-    WbAppearance *appearance = shape->appearance();
-    WbPbrAppearance *pbrAppearance = shape->pbrAppearance();
+    const WbAppearance *appearance = shape->appearance();
+    const WbPbrAppearance *pbrAppearance = shape->pbrAppearance();
     if (appearance) {
+      // cppcheck-suppress constVariablePointer
       WbImageTexture *theTexture = appearance->texture();
       if (theTexture)
         mImageTextures.push_back(theTexture);
     } else if (pbrAppearance) {
+      // cppcheck-suppress constVariablePointer
       WbImageTexture *theTexture = pbrAppearance->baseColorMap();
       if (theTexture)
         mImageTextures.push_back(theTexture);
@@ -184,9 +191,16 @@ void WbDisplay::findImageTextures() {
       findImageTextures(group);
   }
 
+  for (int i = 0; i < mImageTextures.size(); ++i)
+    connect(mImageTextures.at(i), &QObject::destroyed, this, &WbDisplay::removeImageTexture);
+
   // debug code - print the found materials
   // foreach (WbImageTexture *texture, mImageTextures)
-  //   warn(QString("found image texture %1").arg(texture->usefulName()));
+  //   parsingWarn(QString("found image texture %1").arg(texture->usefulName()));
+}
+
+void WbDisplay::removeImageTexture(QObject *object) {
+  mImageTextures.removeAll(static_cast<WbImageTexture *>(object));
 }
 
 void WbDisplay::clearImageTextures() {
@@ -198,15 +212,17 @@ void WbDisplay::findImageTextures(WbGroup *group) {
   WbMFNode::Iterator i(group->children());
   while (i.hasNext()) {
     WbNode *node = i.next();
-    WbShape *shape = dynamic_cast<WbShape *>(node);
+    const WbShape *shape = dynamic_cast<WbShape *>(node);
     if (shape) {
-      WbAppearance *appearance = shape->appearance();
-      WbPbrAppearance *pbrAppearance = shape->pbrAppearance();
+      const WbAppearance *appearance = shape->appearance();
+      const WbPbrAppearance *pbrAppearance = shape->pbrAppearance();
       if (appearance) {
+        // cppcheck-suppress constVariablePointer
         WbImageTexture *theTexture = appearance->texture();
         if (theTexture)
           mImageTextures.push_back(theTexture);
       } else if (pbrAppearance) {
+        // cppcheck-suppress constVariablePointer
         WbImageTexture *theTexture = pbrAppearance->baseColorMap();
         if (theTexture)
           mImageTextures.push_back(theTexture);
@@ -279,8 +295,8 @@ void WbDisplay::handleMessage(QDataStream &stream) {
       stream >> size;
       px = new int[size];
       py = new int[size];
-      stream.readRawData((char *)px, size * sizeof(int));
-      stream.readRawData((char *)py, size * sizeof(int));
+      stream.readRawData(reinterpret_cast<char *>(px), size * sizeof(int));
+      stream.readRawData(reinterpret_cast<char *>(py), size * sizeof(int));
       switch (command) {
         case C_DISPLAY_DRAW_PIXEL:
           drawPixel(px[0], py[0]);
@@ -377,7 +393,7 @@ void WbDisplay::handleMessage(QDataStream &stream) {
   }
 }
 
-void WbDisplay::writeAnswer(QDataStream &stream) {
+void WbDisplay::writeAnswer(WbDataStream &stream) {
   if (mRequestImages) {
     mRequestImages = false;
 
@@ -389,14 +405,14 @@ void WbDisplay::writeAnswer(QDataStream &stream) {
 
     stream << (quint16)width();
     stream << (quint16)height();
-    stream.writeRawData((const char *)mImage, 4 * width() * height());
+    stream.writeRawData(reinterpret_cast<const char *>(mImage), 4 * width() * height());
 
     for (unsigned i = 0; i < number; i++) {
-      WbDisplayImage *di = mImages.at(i);
+      const WbDisplayImage *di = mImages.at(i);
       stream << (qint32)di->id();
       stream << (quint16)di->width();
       stream << (quint16)di->height();
-      stream.writeRawData((const char *)di->image(), 4 * di->width() * di->height());
+      stream.writeRawData(reinterpret_cast<const char *>(di->image()), 4 * di->width() * di->height());
     }
 
     stream << (qint32)mColor;
@@ -410,14 +426,14 @@ void WbDisplay::writeAnswer(QDataStream &stream) {
     stream << di->id();
     stream << di->width();
     stream << di->height();
-    stream.writeRawData((const char *)di->image(), 4 * di->width() * di->height());
+    stream.writeRawData(reinterpret_cast<const char *>(di->image()), 4 * di->width() * di->height());
 
     mSaveOrders.pop_back();
     delete di;
   }
 }
 
-void WbDisplay::writeConfigure(QDataStream &stream) {
+void WbDisplay::writeConfigure(WbDataStream &stream) {
   setup();
 
   stream << (short unsigned int)tag();
@@ -524,6 +540,7 @@ void WbDisplay::drawRectangle(int x, int y, int w, int h, bool fill) {
   int displayWidth = width();
   int displayHeight = height();
 #ifndef NDEBUG
+  // cppcheck-suppress variableScope
   int size = displayWidth * displayHeight;
 #endif
   if (fill) {
@@ -652,8 +669,8 @@ void WbDisplay::drawOval(int cx, int cy, int a, int b, bool fill) {
   my1 = cy;
   mx2 = cx + a;
   my2 = cy;
-  aq = a * a;
-  bq = b * b;
+  aq = (qint64)a * a;
+  bq = (qint64)b * b;
   dx = aq << 1;
   dy = bq << 1;
   r = a * bq;
@@ -709,6 +726,7 @@ void WbDisplay::drawText(const char *txt, int x, int y) {
 #ifdef _WIN32  // mbstowcs doesn't work properly on Windows
   l = MultiByteToWideChar(CP_UTF8, 0, txt, -1, text, l + 1) - 1;
 #else
+  // cppcheck-suppress uninitdata
   l = mbstowcs(text, txt, l + 1);
 #endif
   int fontSize = mDisplayFont->fontSize();
@@ -887,19 +905,18 @@ unsigned int *WbDisplay::imageCopy(short int x, short int y, short int &w, short
   if (mAttachedCamera) {
     // blend camera background image and display image
     const unsigned int *const cameraImage = reinterpret_cast<const unsigned int *>(mAttachedCamera->constImage());
-    int destIndex = 0;
     int displayPixel, displayAlpha, oneMinusDisplayAlpha, cameraPixel;
     for (int j = 0; j < h; j++) {
       int srcRowIndex = (clippedY + j) * width();
-      for (int i = 0; i < w; i++, destIndex++) {
+      for (int i = 0; i < w; i++) {
         int srcPixelIndex = srcRowIndex + clippedX + i;
         displayPixel = mImage[srcPixelIndex];
         displayAlpha = SHIFT(displayPixel, 24);
         oneMinusDisplayAlpha = 0xFF - displayAlpha;
         cameraPixel = cameraImage[srcPixelIndex];
-        clippedImage[srcPixelIndex] = 0xFF000000;
+        clippedImage[j * w + i] = 0xFF000000;
         for (int k = 0; k < 3; k++)
-          clippedImage[srcPixelIndex] +=
+          clippedImage[j * w + i] +=
             (((oneMinusDisplayAlpha * SHIFT(cameraPixel, 8 * k) + displayAlpha * SHIFT(displayPixel, 8 * k)) / 0xFF) << 8 * k);
       }
     }
@@ -921,7 +938,7 @@ unsigned int *WbDisplay::imageCopy(short int x, short int y, short int &w, short
 void WbDisplay::imagePaste(int id, int x, int y, bool blend) {
   if (x >= width() || y >= height())
     return;
-  WbDisplayImage *subImage = NULL;
+  const WbDisplayImage *subImage = NULL;
   for (int i = 0; i < mImages.size(); i++)
     if (mImages.at(i)->id() == id) {
       subImage = mImages.at(i);
@@ -955,8 +972,8 @@ void WbDisplay::imagePaste(int id, int x, int y, bool blend) {
         int newPixel = subImageValues[offsetNewImage];
         unsigned char newAlpha = SHIFT(newPixel, 24);
         unsigned char oneMinusNewAlpha = 0xFF - newAlpha;
-        unsigned char alpha = qMin(0xFF, newAlpha + oldAlpha);
-        mImage[offsetMainImage] = alpha << 24;
+        unsigned char alphaValue = qMin(0xFF, newAlpha + oldAlpha);
+        mImage[offsetMainImage] = alphaValue << 24;
         for (int k = 0; k < 3; k++)
           mImage[offsetMainImage] +=
             (((oneMinusNewAlpha * SHIFT(oldPixel, 8 * k) + newAlpha * SHIFT(newPixel, 8 * k)) / 0xFF) << 8 * k);
@@ -993,39 +1010,37 @@ void WbDisplay::imageLoad(int id, int w, int h, void *data, int format) {
   if (format == WB_IMAGE_BGRA)
     memcpy(clippedImage, data, nbPixel * 4);
   else if (format == WB_IMAGE_ARGB) {
-    const unsigned char *dataUC = (unsigned char *)data;
+    const unsigned char *dataUC = static_cast<unsigned char *>(data);
     for (int i = 0; i < nbPixel; i++) {
       const int offset = 4 * i;
-      if (dataUC[offset] != 0xFF)
-        isTransparent = true;
+      isTransparent = (dataUC[offset] & 0XFF) != 0xFF;
       clippedImage[i] = (dataUC[offset] << 24) | (dataUC[offset + 1] << 16) | (dataUC[offset + 2] << 8) | dataUC[offset + 3];
     }
   } else if (format == WB_IMAGE_RGB) {
-    const unsigned char *dataUC = (unsigned char *)data;
+    const unsigned char *dataUC = static_cast<unsigned char *>(data);
     for (int i = 0; i < nbPixel; i++) {
       const int offset = 3 * i;
       clippedImage[i] = 0xFF000000 | (dataUC[offset] << 16) | (dataUC[offset + 1] << 8) | dataUC[offset + 2];
     }
   } else if (format == WB_IMAGE_RGBA) {
-    const unsigned char *dataUC = (unsigned char *)data;
+    const unsigned char *dataUC = static_cast<unsigned char *>(data);
     for (int i = 0; i < nbPixel; i++) {
       const int offset = 4 * i;
-      if (dataUC[offset + 3] != 0xFF)
-        isTransparent = true;
+      isTransparent = (dataUC[offset + 3] & 0xFF) != 0xFF;
       clippedImage[i] = (dataUC[offset + 3] << 24) | (dataUC[offset] << 16) | (dataUC[offset + 1] << 8) | dataUC[offset + 2];
     }
   } else if (format == WB_IMAGE_ABGR) {
-    const unsigned char *dataUC = (unsigned char *)data;
+    const unsigned char *dataUC = static_cast<unsigned char *>(data);
     for (int i = 0; i < nbPixel; i++) {
       const int offset = 4 * i;
-      if (dataUC[offset] != 0xFF)
-        isTransparent = true;
+      isTransparent = (dataUC[offset] & 0xFF) != 0xFF;
       clippedImage[i] = (dataUC[offset] << 24) | (dataUC[offset + 3] << 16) | (dataUC[offset + 2] << 8) | dataUC[offset + 1];
     }
   } else
     assert(0);
 
   mImages.push_back(new WbDisplayImage(id, w, h, clippedImage, isTransparent));
+  // cppcheck-suppress memleak
 }
 
 void WbDisplay::imageDelete(int id) {
@@ -1065,20 +1080,24 @@ void WbDisplay::createWrenOverlay() {
   connect(mOverlay, &WbWrenTextureOverlay::textureUpdated, this, &WbRenderingDevice::textureUpdated);
   connect(mOverlay, &QObject::destroyed, this, &WbDisplay::removeExternalTextures);
 
-  applyWorldSettings();
   if (!previousSettings.isEmpty())
     mOverlay->restorePerspective(previousSettings, areOverlaysEnabled());
   else
     mOverlay->setVisible(true, areOverlaysEnabled());
 
-  emit textureIdUpdated(mOverlay->textureGLId());
+  emit textureIdUpdated(mOverlay->textureGLId(), MAIN_TEXTURE);
 
   WbWrenOpenGlContext::doneWren();
 }
 
 void WbDisplay::removeExternalTextures() {
+  // first remove all the references to deleted external textures
   for (int i = 0; i < mImageTextures.size(); ++i)
     mImageTextures.at(i)->removeExternalTexture();
+  // then, trigger the appearance update
+  // two steps needed for PBRAppearance nodes if both baseColorMap and emissiveColorMap are defined
+  for (int i = 0; i < mImageTextures.size(); ++i)
+    emit mImageTextures.at(i)->changed();
 }
 
 void WbDisplay::setTransparentTextureIfNeeded() {
@@ -1096,6 +1115,12 @@ void WbDisplay::attachCamera(WbDeviceTag cameraTag) {
   assert(camera);
   WrTexture *texture = camera->getWrenTexture();
   if (texture != NULL && mAttachedCamera != camera) {
+    if (isWindowActive()) {
+      if (mAttachedCamera)
+        mAttachedCamera->enableExternalWindowForAttachedCamera(false);
+      camera->enableExternalWindowForAttachedCamera(true);
+    }
+    emit attachedCameraChanged(mAttachedCamera, camera);
     mAttachedCamera = camera;
     connect(mAttachedCamera, &WbCamera::destroyed, this, &WbDisplay::detachCamera);
     mOverlay->setBackgroundTexture(texture);
@@ -1103,7 +1128,7 @@ void WbDisplay::attachCamera(WbDeviceTag cameraTag) {
     foreach (WbImageTexture *imageTexture, mImageTextures)
       imageTexture->setBackgroundTexture(texture);
 
-    emit backgroundTextureIdUpdated(mOverlay->backgroundTextureGLId());
+    emit textureIdUpdated(mOverlay->backgroundTextureGLId(), BACKGROUND_TEXTURE);
     // clear the alpha channel so that the background image is visible
     const int size = width() * height();
     for (int i = 0; i < size; i++) {
@@ -1122,9 +1147,19 @@ void WbDisplay::detachCamera() {
     foreach (WbImageTexture *imageTexture, mImageTextures)
       imageTexture->unsetBackgroundTexture();
 
+    if (isWindowActive()) {
+      mAttachedCamera->enableExternalWindowForAttachedCamera(false);
+      emit attachedCameraChanged(mAttachedCamera, NULL);
+    }
+    emit textureIdUpdated(0, BACKGROUND_TEXTURE);
     mAttachedCamera = NULL;
-    emit backgroundTextureIdUpdated(0);
   }
+}
+
+void WbDisplay::enableExternalWindow(bool enabled) {
+  if (mAttachedCamera)
+    mAttachedCamera->enableExternalWindowForAttachedCamera(enabled);
+  WbRenderingDevice::enableExternalWindow(enabled);
 }
 
 int WbDisplay::shiftedChannel(int x, int y, int shift) const {
@@ -1168,9 +1203,10 @@ void WbDisplay::postPhysicsStep() {
   mUpdateRequired = false;
 }
 
-void WbDisplay::reset() {
-  WbRenderingDevice::reset();
+void WbDisplay::reset(const QString &id) {
+  WbRenderingDevice::reset(id);
 
+  delete[] mImage;
   mImage = NULL;
   mColor = 0xFFFFFF;
   mAlpha = 0xFF;

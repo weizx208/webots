@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -102,6 +102,7 @@ enum SHADER {
   SHADER_PICKING,
   SHADER_POINT_SET,
   SHADER_RANGE_NOISE,
+  SHADER_SEGMENTATION,
   SHADER_SHADOW_VOLUME,
   SHADER_SIMPLE,
   SHADER_SKYBOX,
@@ -424,7 +425,7 @@ WrShaderProgram *WbWrenShaders::gtaoShader() {
 
     wr_shader_program_use_uniform(gShaders[SHADER_GTAO], WR_GLSL_LAYOUT_UNIFORM_TEXTURE0);
     wr_shader_program_use_uniform(gShaders[SHADER_GTAO], WR_GLSL_LAYOUT_UNIFORM_TEXTURE1);
-    wr_shader_program_use_uniform(gShaders[SHADER_GTAO], WR_GLSL_LAYOUT_UNIFORM_TEXTURE2);
+    wr_shader_program_use_uniform(gShaders[SHADER_GTAO], WR_GLSL_LAYOUT_UNIFORM_GTAO);
     wr_shader_program_use_uniform(gShaders[SHADER_GTAO], WR_GLSL_LAYOUT_UNIFORM_VIEWPORT_SIZE);
 
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_GTAO], WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
@@ -441,8 +442,8 @@ WrShaderProgram *WbWrenShaders::gtaoShader() {
     wr_shader_program_create_custom_uniform(gShaders[SHADER_GTAO], "radius", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
                                             reinterpret_cast<const char *>(&radius));
 
-    const float flipNormalY = 0.0;
-    wr_shader_program_create_custom_uniform(gShaders[SHADER_GTAO], "flipNormalY", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
+    const bool flipNormalY = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_GTAO], "flipNormalY", WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
                                             reinterpret_cast<const char *>(&flipNormalY));
 
     ::buildShader(gShaders[SHADER_GTAO], QFileInfo("gl:shaders/pass_through.vert"), QFileInfo("gl:shaders/gtao.frag"));
@@ -734,11 +735,13 @@ WrShaderProgram *WbWrenShaders::mergeSphericalShader() {
     wr_shader_program_use_uniform(gShaders[SHADER_MERGE_SPHERICAL], WR_GLSL_LAYOUT_UNIFORM_TEXTURE4);
     wr_shader_program_use_uniform(gShaders[SHADER_MERGE_SPHERICAL], WR_GLSL_LAYOUT_UNIFORM_TEXTURE5);
 
-    int defaultInt = 0;
-    wr_shader_program_create_custom_uniform(gShaders[SHADER_MERGE_SPHERICAL], "rangeCamera", WR_SHADER_PROGRAM_UNIFORM_TYPE_INT,
-                                            reinterpret_cast<const char *>(&defaultInt));
+    const bool defaultBool = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_MERGE_SPHERICAL], "rangeCamera",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL, reinterpret_cast<const char *>(&defaultBool));
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_MERGE_SPHERICAL], "cylindrical",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL, reinterpret_cast<const char *>(&defaultBool));
 
-    float defaultFloat = 0.0f;
+    const float defaultFloat = 0.0f;
     wr_shader_program_create_custom_uniform(gShaders[SHADER_MERGE_SPHERICAL], "minRange", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
                                             reinterpret_cast<const char *>(&defaultFloat));
     wr_shader_program_create_custom_uniform(gShaders[SHADER_MERGE_SPHERICAL], "maxRange", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
@@ -765,12 +768,12 @@ WrShaderProgram *WbWrenShaders::motionBlurShader() {
     wr_shader_program_use_uniform(gShaders[SHADER_MOTION_BLUR], WR_GLSL_LAYOUT_UNIFORM_TEXTURE0);
     wr_shader_program_use_uniform(gShaders[SHADER_MOTION_BLUR], WR_GLSL_LAYOUT_UNIFORM_TEXTURE1);
 
-    float intensity = 0.0f;
+    const float intensity = 0.0f;
     wr_shader_program_create_custom_uniform(gShaders[SHADER_MOTION_BLUR], "intensity", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
                                             reinterpret_cast<const char *>(&intensity));
 
-    float firstRender = 1.0f;
-    wr_shader_program_create_custom_uniform(gShaders[SHADER_MOTION_BLUR], "firstRender", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
+    const bool firstRender = true;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_MOTION_BLUR], "firstRender", WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
                                             reinterpret_cast<const char *>(&firstRender));
 
     ::buildShader(gShaders[SHADER_MOTION_BLUR], QFileInfo("gl:shaders/pass_through.vert"),
@@ -786,9 +789,10 @@ WrShaderProgram *WbWrenShaders::overlayShader() {
 
     wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE0);       // background
     wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE1);       // main
-    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE2);       // foreground
-    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE3);       // close button
-    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE4);       // resize button
+    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE2);       // mask
+    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE3);       // foreground
+    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE4);       // close button
+    wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_TEXTURE5);       // resize button
     wr_shader_program_use_uniform(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_CHANNEL_COUNT);  // color channel count
 
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_OVERLAY], WR_GLSL_LAYOUT_UNIFORM_BUFFER_OVERLAY);
@@ -834,6 +838,10 @@ WrShaderProgram *WbWrenShaders::pbrShader() {
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PBR], WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PBR], WR_GLSL_LAYOUT_UNIFORM_BUFFER_FOG);
 
+    const bool defaultBoolValue = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PBR], "reverseNormals", WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
+
     ::buildShader(gShaders[SHADER_PBR], QFileInfo("gl:shaders/pbr.vert"), QFileInfo("gl:shaders/pbr.frag"));
   }
 
@@ -867,6 +875,14 @@ WrShaderProgram *WbWrenShaders::pbrStencilAmbientEmissiveShader() {
     // specular cubemap
     wr_shader_program_use_uniform(gShaders[SHADER_PBR_STENCIL_AMBIENT_EMISSIVE], WR_GLSL_LAYOUT_UNIFORM_MODEL_TRANSFORM);
     wr_shader_program_use_uniform(gShaders[SHADER_PBR_STENCIL_AMBIENT_EMISSIVE], WR_GLSL_LAYOUT_UNIFORM_TEXTURE_TRANSFORM);
+
+    const bool defaultBoolValue = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PBR_STENCIL_AMBIENT_EMISSIVE], "reverseNormals",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PBR_STENCIL_AMBIENT_EMISSIVE], "wireframeRendering",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
 
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PBR_STENCIL_AMBIENT_EMISSIVE],
                                          WR_GLSL_LAYOUT_UNIFORM_BUFFER_MATERIAL_PBR);
@@ -909,6 +925,11 @@ WrShaderProgram *WbWrenShaders::pbrStencilDiffuseSpecularShader() {
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PBR_STENCIL_DIFFUSE_SPECULAR],
                                          WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
 
+    const bool defaultBoolValue = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PBR_STENCIL_DIFFUSE_SPECULAR], "reverseNormals",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
+
     ::buildShader(gShaders[SHADER_PBR_STENCIL_DIFFUSE_SPECULAR], QFileInfo("gl:shaders/pbr_stencil_diffuse_specular.vert"),
                   QFileInfo("gl:shaders/pbr_stencil_diffuse_specular.frag"));
   }
@@ -930,6 +951,10 @@ WrShaderProgram *WbWrenShaders::phongShader() {
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PHONG], WR_GLSL_LAYOUT_UNIFORM_BUFFER_LIGHTS);
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PHONG], WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PHONG], WR_GLSL_LAYOUT_UNIFORM_BUFFER_FOG);
+
+    const bool defaultBoolValue = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PHONG], "reverseNormals", WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
 
     ::buildShader(gShaders[SHADER_PHONG], QFileInfo("gl:shaders/phong.vert"), QFileInfo("gl:shaders/phong.frag"));
   }
@@ -955,6 +980,11 @@ WrShaderProgram *WbWrenShaders::phongStencilAmbientEmissiveShader() {
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PHONG_STENCIL_AMBIENT_EMISSIVE], WR_GLSL_LAYOUT_UNIFORM_BUFFER_LIGHTS);
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PHONG_STENCIL_AMBIENT_EMISSIVE],
                                          WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
+
+    const bool defaultBoolValue = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PHONG_STENCIL_AMBIENT_EMISSIVE], "reverseNormals",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
 
     ::buildShader(gShaders[SHADER_PHONG_STENCIL_AMBIENT_EMISSIVE], QFileInfo("gl:shaders/phong_stencil_ambient_emissive.vert"),
                   QFileInfo("gl:shaders/phong_stencil_ambient_emissive.frag"));
@@ -983,6 +1013,11 @@ WrShaderProgram *WbWrenShaders::phongStencilDiffuseSpecularShader() {
                                          WR_GLSL_LAYOUT_UNIFORM_BUFFER_LIGHT_RENDERABLE);
     wr_shader_program_use_uniform_buffer(gShaders[SHADER_PHONG_STENCIL_DIFFUSE_SPECULAR],
                                          WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
+
+    const bool defaultBoolValue = false;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_PHONG_STENCIL_DIFFUSE_SPECULAR], "reverseNormals",
+                                            WR_SHADER_PROGRAM_UNIFORM_TYPE_BOOL,
+                                            reinterpret_cast<const char *>(&defaultBoolValue));
 
     ::buildShader(gShaders[SHADER_PHONG_STENCIL_DIFFUSE_SPECULAR], QFileInfo("gl:shaders/phong_stencil_diffuse_specular.vert"),
                   QFileInfo("gl:shaders/phong_stencil_diffuse_specular.frag"));
@@ -1020,11 +1055,35 @@ WrShaderProgram *WbWrenShaders::rangeNoiseShader() {
     wr_shader_program_create_custom_uniform(gShaders[SHADER_RANGE_NOISE], "intensity", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
                                             reinterpret_cast<const char *>(&intensity));
 
+    float minRange = 0.0f;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_RANGE_NOISE], "minRange", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
+                                            reinterpret_cast<const char *>(&minRange));
+
+    float maxRange = 0.0f;
+    wr_shader_program_create_custom_uniform(gShaders[SHADER_RANGE_NOISE], "maxRange", WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT,
+                                            reinterpret_cast<const char *>(&maxRange));
+
     ::buildShader(gShaders[SHADER_RANGE_NOISE], QFileInfo("gl:shaders/range_noise.vert"),
                   QFileInfo("gl:shaders/range_noise.frag"));
   }
 
   return gShaders[SHADER_RANGE_NOISE];
+}
+
+WrShaderProgram *WbWrenShaders::segmentationShader() {
+  if (!gShaders[SHADER_SEGMENTATION]) {
+    gShaders[SHADER_SEGMENTATION] = wr_shader_program_new();
+
+    wr_shader_program_use_uniform(gShaders[SHADER_SEGMENTATION], WR_GLSL_LAYOUT_UNIFORM_MODEL_TRANSFORM);
+
+    wr_shader_program_use_uniform_buffer(gShaders[SHADER_SEGMENTATION], WR_GLSL_LAYOUT_UNIFORM_BUFFER_MATERIAL_PHONG);
+    wr_shader_program_use_uniform_buffer(gShaders[SHADER_SEGMENTATION], WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
+
+    ::buildShader(gShaders[SHADER_SEGMENTATION], QFileInfo("gl:shaders/segmentation.vert"),
+                  QFileInfo("gl:shaders/segmentation.frag"));
+  }
+
+  return gShaders[SHADER_SEGMENTATION];
 }
 
 WrShaderProgram *WbWrenShaders::shadowVolumeShader() {

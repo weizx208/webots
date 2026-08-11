@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,6 @@
 #include <webots/keyboard.h>
 #include <webots/motor.h>
 #include <webots/robot.h>
-#include <webots/utils/ansi_codes.h>
 
 #define TIME_STEP 16
 #define TARGET_POINTS_SIZE 13
@@ -29,7 +28,7 @@
 #define MAX_SPEED 7.0
 #define TURN_COEFFICIENT 4.0
 
-enum XYZAComponents { X, Y, Z, ALPHA };
+enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
 
 typedef struct _Vector {
@@ -42,9 +41,9 @@ static WbDeviceTag gps;
 static WbDeviceTag compass;
 
 static Vector targets[TARGET_POINTS_SIZE] = {
-  {-4.209318, -9.147717}, {0.946812, -9.404304},  {0.175989, 1.784311},   {-2.805353, 8.829694},  {-3.846730, 15.602851},
-  {-4.394915, 24.550777}, {-1.701877, 33.617226}, {-4.394915, 24.550777}, {-3.846730, 15.602851}, {-2.805353, 8.829694},
-  {0.175989, 1.784311},   {0.946812, -9.404304},  {-7.930821, -6.421292}
+  {-4.209318, 9.147717},   {0.946812, 9.404304},    {0.175989, -1.784311},   {-2.805353, -8.829694},  {-3.846730, -15.602851},
+  {-4.394915, -24.550777}, {-1.701877, -33.617226}, {-4.394915, -24.550777}, {-3.846730, -15.602851}, {-2.805353, -8.829694},
+  {0.175989, -1.784311},   {0.946812, 9.404304},    {-7.930821, 6.421292}
 
 };
 static int current_target_index = 0;
@@ -53,9 +52,8 @@ static bool old_autopilot = true;
 static int old_key = -1;
 
 static double modulus_double(double a, double m) {
-  int div_i = (int)(a / m);
-  double div_d = (double)div_i;
-  double r = a - div_d * m;
+  const int div = (int)(a / m);
+  double r = a - div * m;
   if (r < 0.0)
     r += m;
   return r;
@@ -98,8 +96,8 @@ static void check_keyboard() {
         break;
       case 'P':
         if (key != old_key) {  // perform this action just once
-          const double *pos3D = wb_gps_get_values(gps);
-          printf("position: {%f, %f}\n", pos3D[X], pos3D[Z]);
+          const double *position_3d = wb_gps_get_values(gps);
+          printf("position: {%f, %f}\n", position_3d[X], position_3d[Y]);
         }
         break;
       case 'A':
@@ -133,15 +131,9 @@ static void normalize(Vector *v) {
 }
 
 // v = v1-v2
-static void minus(Vector *v, const Vector *v1, const Vector *v2) {
+static void minus(Vector *v, const Vector *const v1, const Vector *const v2) {
   v->u = v1->u - v2->u;
   v->v = v1->v - v2->v;
-}
-
-// compute the angle between two vectors
-// return value: [0, 2Pi[
-static double angle(const Vector *v1, const Vector *v2) {
-  return modulus_double(atan2(v2->v, v2->u) - atan2(v1->v, v1->u), 2.0 * M_PI);
 }
 
 // autopilot
@@ -151,22 +143,28 @@ static void run_autopilot() {
   double speeds[2] = {0.0, 0.0};
 
   // read gps position and compass values
-  const double *pos3D = wb_gps_get_values(gps);
-  const double *north3D = wb_compass_get_values(compass);
+  const double *position_3d = wb_gps_get_values(gps);
+  const double *north_3d = wb_compass_get_values(compass);
 
-  // compute the 2D position of the robo and its orientation
-  Vector pos = {pos3D[X], pos3D[Z]};
-  Vector north = {north3D[X], north3D[Z]};
-  Vector front = {-north.u, north.v};
+  // compute the 2D position of the robot and its orientation
+  const Vector position = {position_3d[X], position_3d[Y]};
 
   // compute the direction and the distance to the target
-  Vector dir;
-  minus(&dir, &(targets[current_target_index]), &pos);
-  double distance = norm(&dir);
-  normalize(&dir);
+  Vector direction;
+  minus(&direction, &(targets[current_target_index]), &position);
+  const double distance = norm(&direction);
+  normalize(&direction);
 
-  // compute the target angle
-  double beta = angle(&front, &dir) - M_PI;
+  // compute the error angle
+  const double robot_angle = atan2(north_3d[0], north_3d[1]);
+  const double target_angle = atan2(direction.v, direction.u);
+  double beta = modulus_double(target_angle - robot_angle, 2.0 * M_PI) - M_PI;
+
+  // move singularity
+  if (beta > 0)
+    beta = M_PI - beta;
+  else
+    beta = -beta - M_PI;
 
   // a target position has been reached
   if (distance < DISTANCE_TOLERANCE) {
@@ -196,7 +194,6 @@ int main(int argc, char *argv[]) {
   wb_robot_init();
 
   // print user instructions
-  ANSI_CLEAR_CONSOLE();
   printf("You can drive this robot:\n");
   printf("Select the 3D window and use cursor keys:\n");
   printf("Press 'A' to return to the autopilot mode\n");

@@ -1,4 +1,4 @@
-## Using Your IDE
+## Using your IDE
 
 Using an [Integrated Development Environment (IDE)](https://en.wikipedia.org/wiki/Integrated_development_environment) is convenient as it generally features advanced source code edition tools, a built-in debugger, etc.
 Fortunately, you can use your favorite IDE to develop a Webots controller.
@@ -7,7 +7,7 @@ A priori, Webots works with any IDE to create, build and debug robot controllers
 It is simply a matter of setting up the IDE correctly to use the build rules of Webots controllers.
 
 Documenting every IDE for each OS is difficult to maintain.
-Thefore, only some of them are documented here.
+Therefore, only some of them are documented here.
 They could serve as a reference for others.
 
 The build rules are:
@@ -75,7 +75,7 @@ N/A because Python is interpreted.
     - For Java: `.class` or `.jar`.
 - `SL_PREFIX` is the prefix of a shared library: `lib` on Linux or macOS, and an empty string on Windows.
 - `SL_SUFFIX` is the suffix of a shared library: `.so` on Linux, `.dylib` on macOS and `.dll` on Windows.
-- `PYTHON_VERSION` is your Python version, but concatenated (`27`, `37`, `38`, etc.).
+- `PYTHON_VERSION` is your Python version, but concatenated (`310`, `39`, `38`, etc.).
 
 ---
 
@@ -95,10 +95,12 @@ The C API is composed of ".h" files that contains flat C functions that can be u
 The C++ API is composed of ".hpp" files that contain C++ classes and methods that can be used in C++ controllers only.
 In principle any C or C++ controller from the Webots distribution can be turned into a Visual Studio project.
 
-#### Robot Controller Wizard
+#### New Robot Controller
 
-Since Webots R2018b, a Visual Studio option is offered in the **Wizards / New Robot Controller...** menu after you choose the C or C++ language on Windows.
-This wizard creates a Visual Studio project for your robot controller, so that you don't need to configure it manually as described in the next section.
+A Visual Studio option is offered in the **File / New / New Robot Controller...** menu item after you choose the C or C++ language on Windows.
+Webots creates a Visual Studio project for your robot controller, so that you don't need to configure it manually as described in the next section.
+Webots assumes that you defined the environment variable `WEBOTS_HOME` in the system settings.
+This variable should point to the installation folder of Webots, typically, `C:\Program Files\Webots` or `C:\Users\<MyUsername>\AppData\Local\Programs\Webots`.
 
 #### Configuration
 
@@ -108,11 +110,11 @@ The "Controller.lib" files is needed to link with the "Controller.dll" file that
 
 The following procedure (Visual Studio 2008 Express) explains how to create a Visual Studio project for a Webots controller.
 In this guide, the resulting ".exe" file is launched by Webots.
-Alternatively, Visual Studio can also launch external controllers as explained [here](running-extern-robot-controllers.md#single-simulation-and-single-extern-robot-controller).
+Alternatively, Visual Studio can also launch external controllers as explained [here](running-extern-robot-controllers.md#single-simulation-and-single-local-extern-robot-controller).
 
-1. Copy a Webots project from Webots distribution to your "Documents" folder, or create an empty project directory using Webots menu: `Wizard / New Project Directory...` Either way, the project directory must contain the "controllers" and "worlds" subdirectories.
+1. Copy a Webots project from Webots distribution to your "Documents" folder, or create an empty project directory using the **File / New / New Project Directory...**. Either way, the project directory must contain the "controllers" and "worlds" subdirectories.
 
-2. Start Visual Studio and select: `File / New / Project...`.
+2. Start Visual Studio and select: **File / New / Project...**.
 Then choose these settings:
 
         Project type: General
@@ -122,7 +124,7 @@ Then choose these settings:
 
     Where "MyController" is the name of a new or already existing controller
     directory, and where "Location" must indicate the "controllers" subdirectory of
-    your Webots project directory.
+    your Webots project directory. Make sure to check the "Place solution and project in the same directory" checkbox.
 
 3. Then you can add a C or C++ source file to your project: Choose either: `Project / Add Existing Item` or `Project / Add New Item / C++ File (.cpp)`.
 In the second case you can copy the content of one of the C/C++ examples of Webots distribution.
@@ -168,29 +170,26 @@ In the `Property Pages`, in the `Configuration Properties`, enter following conf
 5. If you want to use the C API, you should skip step 5 and go directly to step 6.
 If you want to use the C++ API follow these instructions:
 
-    In `Property Pages`, in the `Configuration Properties`, add the path to Webots
-    .hpp files:
+    - In `Property Pages`, in the `Configuration Properties`, add the path to Webots .hpp files:
 
-        C/C++ > General > Additional Include Directories:
-          C:\Program Files\Webots\include\controller\c
-          C:\Program Files\Webots\include\controller\cpp
 
-    Now you should have the path to both the .h and the .hpp files.
+            C/C++ > General > Additional Include Directories:
+              C:\Program Files\Webots\include\controller\c
+              C:\Program Files\Webots\include\controller\cpp
 
-    Then you need to add Webots C++ wrappers to your project. The C++ wrappers are
-    .cpp files that implement the interface between the C++ API and the C API. You
-    can proceed like this:
+    - Now you should have the path to both the .h and the .hpp files.
 
-    In Visual Studio, in the `Solution Explorer`: right-mouse-click on the `Sources
-    Files` folder, then select `Add / New Filter`. This should create a `NewFilter1`
-    subfolder in your `Sources Files` folder. Then select the `NewFilter1` and with
-    the right-mouse-button: choose the `Add / Existing Item...` menu. In the file
-    dialog, go to the "C:\Program Files\Webots\resources\languages\cpp" directory,
-    then select all the .cpp files (but no other file) in that directory and hit the
-    `Add` button. This should add the "Accelerometer.cpp, Camera.cpp, Compass.cpp",
-    etc. source files to your project.
+    - Then you need to add Webots C++ wrappers to your project.
+    The C++ wrappers are .cpp files that implement the interface between the C++ API and the C API.
+    You can proceed like this:
 
-6. Now you should be able to build your controller with the `Build / Build MyController` menu item (or the F7 key).
+    - In Visual Studio, in the `Solution Explorer`: right-mouse-click on the `Sources Files` folder, then select `Add / New Filter`.
+    This should create a `NewFilter` subfolder in your `Sources Files` folder.
+    Then select the `NewFilter` and with the right-mouse-button: choose the `Add / Existing Item...` menu.
+    In the file dialog, go to the "C:\Program Files\Webots\src\controller\cpp" directory, then select all the .cpp files (but no other file) in that directory and hit the `Add` button.
+    This should add the "Accelerometer.cpp, Camera.cpp, Compass.cpp", etc. source files to your project.
+
+6. Now you should be able to build your controller with the `Build / Build MyController` menu item (or the <kbd>F7</kbd> key).
 This should generate the "MyProject\controllers\MyController\MyController.exe" file.
 
 7. Now we can switch to Webots in order to test the .exe controller.
@@ -259,9 +258,13 @@ file(GLOB C_SOURCES *.c)
 file(GLOB CPP_SOURCES *.cpp)
 set(SOURCES ${C_SOURCES} ${CPP_SOURCES})
 
+# Set the  Webots home path (change it according to your installation method)
+set(WEBOTS_HOME "/usr/local/webots")
+#set(WEBOTS_HOME "/snap/webots/current/usr/share/webots")
+
 # Link with the Webots controller library.
 link_directories($ENV{WEBOTS_HOME}/lib/controller)
-set (LIBRARIES ${CMAKE_SHARED_LIBRARY_PREFIX}Controller${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_SHARED_LIBRARY_PREFIX}CppController${CMAKE_SHARED_LIBRARY_SUFFIX})
+set (LIBRARIES m ${CMAKE_SHARED_LIBRARY_PREFIX}Controller${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_SHARED_LIBRARY_PREFIX}CppController${CMAKE_SHARED_LIBRARY_SUFFIX})
 include_directories($ENV{WEBOTS_HOME}/include/controller/c $ENV{WEBOTS_HOME}/include/controller/cpp)
 
 # Setup the target executable.
@@ -347,7 +350,7 @@ As an example, the `driver` sample controller is used here.
 
 In order to use the Webots Python API, it should be added to the project.
 This can be done from the `File` / `Settings` menu.
-In the `Settings` window, select the `Project` / `Project Structure` tab, then, the `Add Content Root` button can be used to add a new folder to the path, select the `WEBOTS_HOME/lib/controller/python37` folder (or any other Python version).
+In the `Settings` window, select the `Project` / `Project Structure` tab, then, the `Add Content Root` button can be used to add a new folder to the path, select the `WEBOTS_HOME/lib/controller/python38` folder (or any other Python version).
 
 %figure "Addition of the Webots controller library"
 
@@ -357,8 +360,31 @@ In the `Settings` window, select the `Project` / `Project Structure` tab, then, 
 
 The Webots Python API depends on the Webots CPP API, therefore, the path need to be modifed to include the Webots `lib` directory.
 This can be done from the `Run` / `Edit Configurations` menu.
-In the `Run Configurations` windows, press the `+` button and then select `Python`, then set the `Script path` to point to your python file and in the `Environment variables` define the path variable (i.e. `PATH` on Windows, `LD_LIBRARY_PATH` on Linux or `DYLD_LIBRARY_PATH` on macOS) to point to `WEBOTS_HOME/lib/controller`.
-On Windows, you should also add `WEBOTS_HOME/msys64/mingw64/bin` to your `PATH` environment variable.
+In the `Run Configurations` windows, press the `+` button and then select `Python`, then set the `Script path` to point to your python file and in the `Environment variables` define the path variable (adjust it if needed, with your actual Webots installation folder):
+
+%tab-component "os"
+
+%tab "Linux"
+```bash
+LD_LIBRARY_PATH=/usr/local/webots/lib/controller
+```
+%tab-end
+
+%tab "Windows"
+```bash
+Path=C:\Program Files\Webots\lib\controller\;C:\Program Files\Webots\msys64\mingw64\bin\;C:\Program Files\Webots\msys64\mingw64\bin\cpp
+```
+_Note_: for some reason, the anti-slash at the end of `controller\` and `bin\` is critical. If missing, it won't work.
+%tab-end
+
+%tab "macOS"
+```bash
+DYLD_LIBRARY_PATH=/Applications/Webots.app/lib/controller
+```
+%tab-end
+
+%end
+
 If you are using other libraries (e.g., the `vehicle libraries`, `DARwIn-OP library`, etc.), the path to the corresponding shared libraries should be added as well.
 
 %figure "Addition of the Webots libraries to the path"
@@ -370,7 +396,7 @@ If you are using other libraries (e.g., the `vehicle libraries`, `DARwIn-OP libr
 #### Run the Controller
 
 Once the [PyCharm](https://www.jetbrains.com/pycharm) project configured, you can start Webots and open the desired world.
-To allow [PyCharm](https://www.jetbrains.com/pycharm) to start the controller instead of Webots, set the controller of the robot to `<extern>` (see the [Running Extern Robot Controllers](https://www.cyberbotics.com/doc/guide/running-extern-robot-controllers) chapter for more information about external controller).
+To allow [PyCharm](https://www.jetbrains.com/pycharm) to start the controller instead of Webots, set the controller of the robot to `<extern>` and set the environment variables as explained in the [Running Extern Robot Controllers](https://cyberbotics.com/doc/guide/running-extern-robot-controllers#environment-variables) chapter.
 
 %figure "Robot controller to external"
 

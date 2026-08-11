@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,13 @@
 #include "TextureCubeMap.hpp"
 #include "TextureRtt.hpp"
 
+#ifdef __EMSCRIPTEN__
+#include <GL/gl.h>
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
+
 #include <wren/shader_program.h>
 #include <wren/texture_cubemap.h>
 #include <wren/texture_cubemap_baker.h>
@@ -92,11 +98,11 @@ namespace wren {
         // link vertex attributes
         glstate::bindVertexArrayObject(cubeVAO);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(0));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(6 * sizeof(float)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glstate::releaseVertexArrayObject(cubeVAO);
       }
@@ -122,9 +128,9 @@ namespace wren {
         glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void *>(0));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glstate::releaseVertexArrayObject(quadVAO);
       }
@@ -248,7 +254,7 @@ namespace wren {
       glBindTexture(GL_TEXTURE_CUBE_MAP, prefilteredCubeGlName);
 
       for (unsigned int i = 0; i < 6; ++i)
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA16F, size, size, 0, GL_RGBA, GL_FLOAT, nullptr);
 
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -307,7 +313,7 @@ namespace wren {
       return prefilteredCube;
     }
 
-    TextureRtt *bakeBrdf(ShaderProgram *brdfShader, unsigned int size) {
+    TextureRtt *bakeBrdf(const ShaderProgram *brdfShader, unsigned int size) {
       unsigned int captureFBO = 0;
       unsigned int captureRBO = 0;
       glGenFramebuffers(1, &captureFBO);
@@ -322,6 +328,7 @@ namespace wren {
       glstate::setStencilTest(false);
       glstate::setColorMask(true, true, true, true);
       glstate::setCullFace(false);
+      glstate::setPolygonMode(GL_FILL);
 
       unsigned int brdfTextureGlName = Texture::generateNewTexture();
 
@@ -334,7 +341,7 @@ namespace wren {
 
       // pre-allocate enough memory for the LUT texture.
       glBindTexture(GL_TEXTURE_2D, brdfTextureGlName);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, 0);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, size, size, 0, GL_RGBA, GL_FLOAT, 0);
       // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -357,10 +364,9 @@ namespace wren {
       glstate::releaseRenderBuffer(captureRBO);
       glDeleteFramebuffers(1, &captureFBO);
       glDeleteRenderbuffers(1, &captureRBO);
-      glstate::releaseFrameBuffer(captureFBO);
-      glstate::releaseRenderBuffer(captureRBO);
       brdfShader->release();
       glDeleteVertexArrays(1, &quadVAO);
+      glDeleteBuffers(1, &quadVBO);
       quadVAO = quadVBO = 0;
       return brdfTexture;
     }
@@ -383,5 +389,5 @@ WrTextureCubeMap *wr_texture_cubemap_bake_specular_irradiance(WrTextureCubeMap *
 
 WrTextureRtt *wr_texture_cubemap_bake_brdf(WrShaderProgram *shader, unsigned int size) {
   return reinterpret_cast<WrTextureRtt *>(
-    wren::texturecubemapbaker::bakeBrdf(reinterpret_cast<wren::ShaderProgram *>(shader), size));
+    wren::texturecubemapbaker::bakeBrdf(reinterpret_cast<const wren::ShaderProgram *>(shader), size));
 }

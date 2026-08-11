@@ -1,11 +1,11 @@
 /*
- * Copyright 1996-2020 Cyberbotics Ltd.
+ * Copyright 1996-2024 Cyberbotics Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
             printf("Releasing can\n");
             state = RELEASING;
             for (i = 0; i < 3; ++i)
-              wb_motor_set_position(hand_motors[i], 0);
+              wb_motor_set_position(hand_motors[i], wb_motor_get_min_position(hand_motors[i]));
           }
           break;
         case RELEASING:

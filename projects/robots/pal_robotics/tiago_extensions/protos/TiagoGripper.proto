@@ -1,7 +1,15 @@
-#VRML_SIM R2020b utf8
+#VRML_SIM R2025a utf8
 # license: Apache License 2.0.
-# license url: http://www.apache.org/licenses/LICENSE-2.0.
+# license url: https://www.apache.org/licenses/LICENSE-2.0
+# documentation url: https://webots.cloud/run?url=https://github.com/cyberbotics/webots/blob/released/projects/robots/pal_robotics/tiago_extensions/protos/TiagoGripper.proto
+# keywords: robot/extension, actuator/gripper
 # Parallel gripper end-effector for the TIAGo robot from PAL Robotics.
+# template language: javascript
+
+EXTERNPROTO "webots://projects/appearances/protos/MattePaint.proto"
+EXTERNPROTO "webots://projects/appearances/protos/BrushedAluminium.proto"
+EXTERNPROTO "webots://projects/appearances/protos/GlossyPaint.proto"
+EXTERNPROTO "webots://projects/objects/factory/tools/protos/CapScrew.proto"
 
 PROTO TiagoGripper [
   field  SFVec3f                             translation  0 0.016 0
@@ -9,23 +17,22 @@ PROTO TiagoGripper [
   field  SFString{"left", "front", "right"}  name         "front"
 ]
 {
-  %{
-    local side = ""
-    if fields.name.value == "left" then
-      side = "left_hand_"
-    elseif fields.name.value == "right" then
-      side = "right_hand_"
-    else
-      side = ""
-    end
-  }%
-    Solid {
+  %<
+    let side = '';
+    if (fields.name.value === 'left')
+      side = 'left_hand_';
+    else if (fields.name.value === 'right')
+      side = 'right_hand_';
+  >%
+  Slot {
+    type "tiago hand"
+    endPoint Solid {
       translation IS translation
       rotation IS rotation
       children [
         DEF GRIPPER_FRAME Group {
           children [
-            DEF INSIDE_1 Transform {
+            DEF INSIDE_1 Pose {
               translation 0.002 0.0097 -0.093
               children [
                 Shape {
@@ -38,7 +45,7 @@ PROTO TiagoGripper [
                 }
               ]
             }
-            DEF INSIDE_2 Transform {
+            DEF INSIDE_2 Pose {
               translation -0.002 -0.0097 -0.093
               children [
                 Shape {
@@ -51,7 +58,7 @@ PROTO TiagoGripper [
                 }
               ]
             }
-            DEF BLACK Transform {
+            DEF BLACK Pose {
               translation -0.005 0.0004 0.001
               children [
                 DEF BLACK Shape {
@@ -80,9 +87,8 @@ PROTO TiagoGripper [
                 }
               ]
             }
-            DEF CONNECTOR Transform {
+            DEF CONNECTOR Pose {
               translation 0 0 0.0087
-              rotation 1 0 0 -1.5708
               children [
                 DEF FACE Shape {
                   appearance BrushedAluminium {
@@ -156,179 +162,200 @@ PROTO TiagoGripper [
             DEF v1 CapScrew {
               translation 0.0477 0.008 -0.0108
               rotation 0 1 0 -1.5708
-              appearance BrushedAluminium {
+              appearance DEF SCREW_APPEARANCE BrushedAluminium {
               }
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v2 CapScrew {
               translation 0.0477 0.008 -0.043
               rotation 0 1 0 -1.5708
               name "cap screw(1)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v3 CapScrew {
               translation 0.0477 0.008 -0.075
               rotation 0 1 0 -1.5708
               name "cap screw(2)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v4 CapScrew {
               translation 0.0477 -0.008 -0.075
               rotation 0 1 0 -1.5708
               name "cap screw(3)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v5 CapScrew {
               translation 0.0477 -0.008 -0.043
               rotation 0 1 0 -1.5708
               name "cap screw(4)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v6 CapScrew {
               translation 0.0477 -0.008 -0.0108
               rotation 0 1 0 -1.5708
               name "cap screw(5)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v7 CapScrew {
               translation -0.0477 0.008 -0.0108
               rotation 0 1 0 1.5708
               name "cap screw(6)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v8 CapScrew {
               translation -0.0477 0.008 -0.043
               rotation 0 1 0 1.5708
               name "cap screw(7)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v9 CapScrew {
               translation -0.0477 0.008 -0.075
               rotation 0 1 0 1.5708
               name "cap screw(8)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v10 CapScrew {
               translation -0.0477 -0.008 -0.075
               rotation 0 1 0 1.5708
               name "cap screw(9)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v11 CapScrew {
               translation -0.0477 -0.008 -0.043
               rotation 0 1 0 1.5708
               name "cap screw(10)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF v12 CapScrew {
               translation -0.0477 -0.008 -0.0108
               rotation 0 1 0 1.5708
               name "cap screw(11)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0018
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vT1 CapScrew {
               translation -0.0425 0.0094 -0.0945
               name "cap screw(12)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.002
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vT2 CapScrew {
               translation 0.0426 -0.0094 -0.09448
               name "cap screw(13)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.002
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vB1 CapScrew {
               translation 0 -0.033 0.0026
               rotation 1 0 0 3.14159
               name "cap screw(14)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.002
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vB2 CapScrew {
               translation 0 0.033 0.0026
               rotation 1 0 0 3.14159
               name "cap screw(15)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.002
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vB3 CapScrew {
               translation -0.0433 -0.0315 0.0026
               rotation 1 0 0 3.14159
               name "cap screw(16)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.002
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vB4 CapScrew {
               translation 0.0433 0.0315 0.0026
               rotation 1 0 0 3.14159
               name "cap screw(17)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.002
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vB5 CapScrew {
               translation -0.0415 0.0029 -0.0004
               rotation 1 0 0 3.14159
               name "cap screw(18)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0036
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
             DEF vB6 CapScrew {
               translation 0.0415 -0.0029 -0.0004
               rotation 1 0 0 3.14159
               name "cap screw(19)"
-              appearance BrushedAluminium {
-              }
+              appearance USE SCREW_APPEARANCE
               screwRadius 0.0036
               screwLength 0.005
+              enablePhysics FALSE
+              enableBoundingObject FALSE
             }
           ]
         }
@@ -339,13 +366,13 @@ PROTO TiagoGripper [
           }
           device [
             LinearMotor {
-              name %{= "\"" .. side .. "gripper_left_finger_joint\""}%
+              name %<= '"' + side + 'gripper_left_finger_joint"' >%
               maxVelocity 0.05
               maxPosition 0.045
               maxForce 16
             }
             PositionSensor {
-              name %{= "\"" .. side .. "gripper_left_finger_joint_sensor\""}%
+              name %<= '"' + side + 'gripper_left_sensor_finger_joint"' >%
             }
           ]
           endPoint DEF LEFT_GRIPPER Solid {
@@ -407,7 +434,7 @@ PROTO TiagoGripper [
             name "gripper_left_finger_link"
             boundingObject DEF GRIPPER_BO Group {
               children [
-                Transform {
+                Pose {
                   translation 0.004 0 -0.1741
                   children [
                     Box {
@@ -416,7 +443,7 @@ PROTO TiagoGripper [
                   ]
                   translationStep 0.0001
                 }
-                Transform {
+                Pose {
                   translation 0.0049 0.0153 -0.1208
                   children [
                     Box {
@@ -425,7 +452,7 @@ PROTO TiagoGripper [
                   ]
                   translationStep 0.0001
                 }
-                Transform {
+                Pose {
                   translation -0.0085 0.0156 -0.1048
                   children [
                     Box {
@@ -449,20 +476,19 @@ PROTO TiagoGripper [
           }
           device [
             LinearMotor {
-              name %{= "\"" .. side .. "gripper_right_finger_joint\""}%
+              name %<= '"' + side + 'gripper_right_finger_joint"' >%
               maxVelocity 0.05
               maxPosition 0.045
               maxForce 16
             }
             PositionSensor {
-              name %{= "\"" .. side .. "gripper_right_finger_joint_sensor\""}%
+              name %<= '"' + side + 'gripper_right_sensor_finger_joint"' >%
             }
           ]
           endPoint DEF RIGHT_GRIPPER Solid {
             rotation 0 0 -1 0
             children [
-              Transform {
-                rotation 0 0 -1 0
+              Pose {
                 children [
                   DEF GRIPPER_SHAPE Group {
                     children [
@@ -522,7 +548,7 @@ PROTO TiagoGripper [
             name "gripper_right_finger_link"
             boundingObject DEF GRIPPER_BO Group {
               children [
-                Transform {
+                Pose {
                   translation 0.004 0 -0.1741
                   children [
                     Box {
@@ -531,7 +557,7 @@ PROTO TiagoGripper [
                   ]
                   translationStep 0.0001
                 }
-                Transform {
+                Pose {
                   translation 0.0049 0.0153 -0.1208
                   children [
                     Box {
@@ -540,7 +566,7 @@ PROTO TiagoGripper [
                   ]
                   translationStep 0.0001
                 }
-                Transform {
+                Pose {
                   translation -0.0085 0.0156 -0.1048
                   children [
                     Box {
@@ -561,8 +587,7 @@ PROTO TiagoGripper [
       name IS name
       boundingObject Group {
         children [
-          Transform {
-            rotation 1 0 0 1.57
+          Pose {
             children [
               Cylinder {
                 height 0.028
@@ -572,7 +597,7 @@ PROTO TiagoGripper [
             translationStep 0.0001
             rotationStep 0.001
           }
-          Transform {
+          Pose {
             translation 0.029 -0.01834 -0.046
             rotation 0 0 -1 -0.59
             children [
@@ -583,7 +608,7 @@ PROTO TiagoGripper [
             translationStep 0.0001
             rotationStep 0.001
           }
-          Transform {
+          Pose {
             translation -0.029 0.01834 -0.046
             rotation 0 0 -1 -0.59
             children [
@@ -594,7 +619,7 @@ PROTO TiagoGripper [
             translationStep 0.0001
             rotationStep 0.001
           }
-          Transform {
+          Pose {
             translation 0.0172 0.0109 -0.046
             rotation 0 -1 0 1.5708
             children [
@@ -603,7 +628,7 @@ PROTO TiagoGripper [
               }
             ]
           }
-          Transform {
+          Pose {
             translation -0.0172 -0.0109 -0.046
             rotation 0 -1 0 1.5708
             children [
@@ -620,4 +645,5 @@ PROTO TiagoGripper [
         mass 1
       }
     }
+  }
 }

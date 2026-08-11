@@ -1,10 +1,10 @@
-// Copyright 1996-2020 Cyberbotics Ltd.
+// Copyright 1996-2024 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@
 #include "WbHingeJoint.hpp"
 #include "WbJoint.hpp"
 #include "WbMFColor.hpp"
+#include "WbMathsUtilities.hpp"
 #include "WbMotor.hpp"
 #include "WbNodeUtilities.hpp"
 #include "WbPreferences.hpp"
@@ -56,7 +57,7 @@ void WbMuscle::init() {
   // deprecated field
   mMaxRadius = findSFDouble("maxRadius");
   if (mVolume->value() == 0.01 && mMaxRadius->value() != 0.0)
-    warn(tr("'maxRadius' field is deprecated, please use the 'volume' field instead."));
+    parsingWarn(tr("'maxRadius' field is deprecated, please use the 'volume' field instead."));
 
   mEndPoint = NULL;
   mHeight = 0.1;
@@ -65,7 +66,7 @@ void WbMuscle::init() {
   mStatus = 0.0;
   mMaterialStatus = mStatus;
   mDirectionInverted = false;
-  mParentTransform = NULL;
+  mParentPose = NULL;
   mMatrix = WbMatrix4();
 
   // WREN
@@ -119,8 +120,8 @@ WbMuscle::~WbMuscle() {
 void WbMuscle::postFinalize() {
   WbBaseNode::postFinalize();
 
-  mParentTransform = WbNodeUtilities::findUpperTransform(this);
-  const WbJoint *joint = dynamic_cast<WbJoint *>(parent()->parent());
+  mParentPose = WbNodeUtilities::findUpperPose(this);
+  const WbJoint *joint = dynamic_cast<WbJoint *>(parentNode()->parentNode());
   updateEndPoint(joint->solidEndPoint());
   WbWrenVertexArrayFrameListener::instance()->subscribeMuscle(this);
   updateMaterial();
@@ -197,7 +198,7 @@ void WbMuscle::updateEndPointPosition() {
 
 void WbMuscle::updateEndPoint(WbBaseNode *node) {
   const WbSolid *solid = dynamic_cast<WbSolid *>(node);
-  const WbJoint *joint = dynamic_cast<WbJoint *>(parent()->parent());
+  const WbJoint *joint = dynamic_cast<WbJoint *>(parentNode()->parentNode());
   if (mEndPoint != solid) {
     if (mEndPoint) {
       disconnect(mEndPoint->translationFieldValue(), &WbSFVector3::changedByOde, this, &WbMuscle::stretch);
@@ -205,7 +206,7 @@ void WbMuscle::updateEndPoint(WbBaseNode *node) {
       disconnect(mEndPoint, &WbSolid::translationOrRotationChangedByUser, this, &WbMuscle::updateEndPointPosition);
     }
     mEndPoint = solid;
-    if (solid) {
+    if (mEndPoint) {
       // listen to solid endPoint position change
       connect(mEndPoint->translationFieldValue(), &WbSFVector3::changedByOde, this, &WbMuscle::stretch, Qt::UniqueConnection);
       // listen to joint force percentage
@@ -220,7 +221,7 @@ void WbMuscle::updateEndPoint(WbBaseNode *node) {
 }
 
 void WbMuscle::updateStretchForce(double forcePercentage, bool immediateUpdate, int motorIndex) {
-  const WbMotor *motor = dynamic_cast<WbMotor *>(parent());
+  const WbMotor *motor = dynamic_cast<WbMotor *>(parentNode());
   if (motor->positionIndex() != motorIndex)
     return;
   mStatus = forcePercentage;
@@ -260,7 +261,7 @@ void WbMuscle::computeStretchedDimensions() {
   if (fabs(1 - dotProduct) > 1e-06) {
     WbVector3 w = y.cross(t);
     w.normalize();
-    double angle = acos(dotProduct);
+    double angle = WbMathsUtilities::clampedAcos(dotProduct);
     assert(!std::isnan(angle));
     mMatrix.setRotation(w.x(), w.y(), w.z(), angle);
   }
@@ -310,6 +311,7 @@ void WbMuscle::createWrenObjects() {
   mTransform = wr_transform_new();
   wr_transform_attach_child(mTransform, WR_NODE(mRenderable));
   wr_transform_attach_child(wrenNode(), WR_NODE(mTransform));
+  setWrenNode(mTransform);
 
   WbWrenPicker::setPickable(mRenderable, uniqueId(), true);
 }
@@ -382,10 +384,8 @@ void WbMuscle::updateMeshCoordinates() {
 
   // set vertex coordinates and normals
   const WbMatrix3 rm = mMatrix.extracted3x3Matrix();
-  int vIndex = 0;
-  int nIndex = 0;
   // top vertices
-  for (int i = 0; i < SUBDIVISION; ++i, vIndex += 3, nIndex += 3) {
+  for (int i = 0; i < SUBDIVISION; ++i) {
     float vertex[3];
     (mMatrix * WbVector4(0, 0, 0, 1)).toVector3().toFloatArray(vertex);
     wr_dynamic_mesh_add_vertex(mMesh, vertex);
@@ -401,7 +401,7 @@ void WbMuscle::updateMeshCoordinates() {
   for (int j = 1; j < SUBDIVISION; ++j, y += dy) {
     const double d = y / h2;
     const double r = mRadius * sqrt(1 - d * d);
-    for (int i = 0; i <= SUBDIVISION; ++i, vIndex += 3, nIndex += 3) {
+    for (int i = 0; i <= SUBDIVISION; ++i) {
       const WbVector4 coord = WbVector4(r * gCircleCoordinates[i].x(), y + h2, r * gCircleCoordinates[i].y(), 1.0);
 
       float vertex[3];
@@ -413,7 +413,7 @@ void WbMuscle::updateMeshCoordinates() {
     }
   }
   // bottom vertices
-  for (int i = 0; i < SUBDIVISION; ++i, vIndex += 3, nIndex += 3) {
+  for (int i = 0; i < SUBDIVISION; ++i) {
     float vertex[3];
     (mMatrix * WbVector4(0, mHeight, 0, 1)).toVector3().toFloatArray(vertex);
     wr_dynamic_mesh_add_vertex(mMesh, vertex);

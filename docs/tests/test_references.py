@@ -4,15 +4,16 @@ from books import Books
 
 import os
 import re
+import sys
 
 
 def slugify(txt):
     """Slugify function."""
     output = txt.lower()
-    output = re.sub(r'\([^)]*\)', '', output)  # remove the content of parenthesis
+    output = re.sub(r'\]\([^)]*\)', ']', output)  # remove the content of parenthesis if reference
     output = re.sub(r'<[^>]+>', '', output)
     output = output.replace('+', 'p')
-    output = re.sub(r"[\(\):`']", '', output)
+    output = re.sub(r"[\(\):`'=]", '', output)
     output = re.sub(r'\\_', '_', output)
     output = re.sub(r'[\W-]+', '-', output)
     output = re.sub(r'^-*', '', output)
@@ -28,9 +29,15 @@ class TestReferences(unittest.TestCase):
         books = Books()
         self.anchors = {}
         for book in books.books:
+
+            # we are not responsible of the content of the discord chats
+            if book.name == 'discord':
+                continue
+
             for md_path in book.md_paths:
                 anchors = []
-                with open(md_path) as f:
+                args = {} if sys.version_info[0] < 3 else {'encoding': 'utf-8'}
+                with open(md_path, **args) as f:
                     skipUntil = ''
                     for line in f:
                         if skipUntil:
@@ -67,6 +74,11 @@ class TestReferences(unittest.TestCase):
         """Test that the anchors are unique."""
         books = Books()
         for book in books.books:
+
+            # we are not responsible of the content of the discord chats
+            if book.name == 'discord':
+                continue
+
             for md_path in book.md_paths:
                 anchors = self.anchors[md_path]
                 s = set()
@@ -83,8 +95,14 @@ class TestReferences(unittest.TestCase):
         """Test that the MD files refer valid URLs."""
         books = Books()
         for book in books.books:
+
+            # we are not responsible of the content of the discord chats
+            if book.name == 'discord':
+                continue
+
             for md_path in book.md_paths:
-                with open(md_path) as f:
+                args = {} if sys.version_info[0] < 3 else {'encoding': 'utf-8'}
+                with open(md_path, **args) as f:
                     content = f.read()
                 for m in re.finditer(r"[^!]\[(.*?)\]\(([^\)]+)\)", content):
                     # remove parameters
@@ -108,7 +126,11 @@ class TestReferences(unittest.TestCase):
                             msg='Invalid address "%s"' % (mailto)
                         )
                         continue
-                    # 5. link to another MD file
+                    # 5. variable (the variable should be in format `url.something`)
+                    if ref.startswith('{{'):
+                        if re.match(r'{{\s{0,}url\..*}}', ref) is not None:
+                            continue
+                    # 6. link to another MD file
                     link = ''
                     anchor = ''
                     if ref.startswith('#'):
@@ -129,7 +151,7 @@ class TestReferences(unittest.TestCase):
                             os.path.isfile(file_path),
                             msg='%s: "%s" not found' % (md_path, file_path)
                         )
-                    # 6. Anchor
+                    # 7. Anchor
                     if anchor != '':
                         file_path = ''
                         if link == '':
